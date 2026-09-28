@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   LayoutDashboard, RefreshCw, Users, UserPlus, Inbox, MailWarning, MessageSquare, Clock, CalendarClock, AlarmClock,
   Target, Snowflake, CheckCircle2, Banknote, Presentation, FileText, Receipt, Sparkles, ArrowRightLeft, Phone, ArrowRight, Bot,
+  Repeat,
 } from "lucide-react";
 import { DashboardService } from "@/ServiceLayer/WhatsAppService/WhatsAppService";
 import { FollowUpService } from "@/ServiceLayer/LeadService/LeadService";
@@ -58,13 +59,14 @@ function activityText(a) {
     case "DEMO": return "Demo done";
     case "QUOTE": return a.body ?? "Quotation";
     case "INVOICE": return a.body ?? "Invoice";
+    case "SUBSCR": return a.body ?? "Subscription";
     case "MEETING": return "Meeting logged";
     case "CALL": return "Call logged";
     default: return a.activityType;
   }
 }
 
-const ACTIVITY_ICON = { CREATED: Sparkles, STATUS: ArrowRightLeft, DEMO: Presentation, MEETING: Users, CALL: Phone, QUOTE: FileText, INVOICE: Receipt };
+const ACTIVITY_ICON = { CREATED: Sparkles, STATUS: ArrowRightLeft, DEMO: Presentation, MEETING: Users, CALL: Phone, QUOTE: FileText, INVOICE: Receipt, SUBSCR: Repeat };
 
 export default function DashboardPage() {
   const { isAdmin, user, refreshUnread } = useAuth();

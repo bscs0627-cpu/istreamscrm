@@ -53,3 +53,15 @@ async function openPdf(load) {
 
 export const openQuotationPdf = (id) => openPdf(() => QuotationService.pdf(id));
 export const openInvoicePdf = (id) => openPdf(() => InvoiceService.pdf(id));
+
+export const SubscriptionService = {
+  getAll: (params) => client.get("/subscriptions", { params: { ...params, ...tz() } }).then((r) => r.data),
+  summary: () => client.get("/subscriptions/summary", { params: tz() }).then((r) => r.data),
+  create: (payload) => client.post("/subscriptions", payload, { params: tz() }).then((r) => r.data),
+  fromQuotation: (quotationId) => client.post(`/subscriptions/from-quotation/${quotationId}`, null, { params: tz() }).then((r) => r.data),
+  update: (id, payload) => client.put(`/subscriptions/${id}`, payload, { params: tz() }).then((r) => r.data),
+  cancel: (id, reason) => client.post(`/subscriptions/${id}/cancel`, { reason }, { params: tz() }).then((r) => r.data),
+  renew: (id) => client.post(`/subscriptions/${id}/renew`, null, { params: tz() }).then((r) => r.data),
+  remind: (id, payload) => client.post(`/subscriptions/${id}/remind`, payload, { params: tz() }).then((r) => r.data),
+  runRenewals: () => client.post("/subscriptions/run-renewals").then((r) => r.data),
+};

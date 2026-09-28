@@ -21,10 +21,11 @@ public class InvoicesController : ControllerBase
     private readonly ISettingsRepository _whatsAppSettings;
     private readonly IMailboxService _mailbox;
     private readonly IWhatsAppService _whatsApp;
+    private readonly ISubscriptionRepository _subs;
 
     public InvoicesController(IInvoiceRepository repo, IQuotationRepository quotes, ILeadRepository leads, ICompanyProfileRepository profile,
         ICustomerRepository customers, IEmailSettingsRepository emailSettings, ISettingsRepository whatsAppSettings,
-        IMailboxService mailbox, IWhatsAppService whatsApp)
+        IMailboxService mailbox, IWhatsAppService whatsApp, ISubscriptionRepository subs)
     {
         _repo = repo;
         _quotes = quotes;
@@ -35,6 +36,7 @@ public class InvoicesController : ControllerBase
         _whatsAppSettings = whatsAppSettings;
         _mailbox = mailbox;
         _whatsApp = whatsApp;
+        _subs = subs;
     }
 
     private int? Scope => User.IsAdmin() ? null : User.UserId();
@@ -164,6 +166,8 @@ public class InvoicesController : ControllerBase
         await _repo.IssueAsync(User.CompanyId(), id, i.AccountName ?? i.CustomerName ?? i.WhatsappName, i.AccountTrn,
             address.Length == 0 ? null : address);
         var issued = await _repo.GetByIdAsync(User.CompanyId(), id, Today(tzOffset));
+        // An issued renewal invoice moves the subscription's paid-up date to the end of its period.
+        if (issued!.SubscriptionId is int subId && issued.PeriodEnd is DateTime periodEnd) await _subs.ExtendAsync(subId, periodEnd);
         await _leads.LogActivityAsync(User.CompanyId(), i.LeadId, "INVOICE", $"{issued!.InvoiceNo} issued · AED {issued.GrandTotal:N2}", User.UserId());
         return Ok(issued);
     }
@@ -178,6 +182,7 @@ public class InvoicesController : ControllerBase
         if (i.Status != "ISSUED") return BadRequest(new { message = "Only an issued invoice can be cancelled (delete a draft instead)." });
         if (i.AmountPaid > 0) return BadRequest(new { message = "This invoice has payments. Remove them before cancelling." });
         await _repo.CancelAsync(User.CompanyId(), id, dto.Reason.Trim());
+        if (i.SubscriptionId is int subId && i.PeriodStart is DateTime ps && i.PeriodEnd is DateTime pe) await _subs.RevertAsync(subId, ps, pe);
         await _leads.LogActivityAsync(User.CompanyId(), i.LeadId, "INVOICE", $"{i.InvoiceNo} cancelled: {dto.Reason.Trim()}", User.UserId());
         return Ok(await _repo.GetByIdAsync(User.CompanyId(), id, Today(tzOffset)));
     }

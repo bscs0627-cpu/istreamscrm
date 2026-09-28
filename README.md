@@ -20,6 +20,7 @@ The ports differ from the real-estate CRM (5097 / 5098), so both can run on one 
    sqlcmd -I -S "(localdb)\MSSQLLocalDB" -i database/04_leads.sql
    sqlcmd -I -S "(localdb)\MSSQLLocalDB" -i database/05_quotations.sql
    sqlcmd -I -S "(localdb)\MSSQLLocalDB" -i database/06_invoices.sql
+   sqlcmd -I -S "(localdb)\MSSQLLocalDB" -i database/07_subscriptions.sql
    ```
 2. Create `api/appsettings.Development.json` (not committed):
    ```json
@@ -48,6 +49,7 @@ cd frontend && npm run dev
 | Quotations | QT-2026-0001 from a lead's products (quantity = users for per-user prices); discount and 5% VAT per line; revisions R1, R2…; admin approval above the discount limit; PDF with your logo, bank details and terms; send by email (attached) or WhatsApp (document); Accepted wins the lead at the value before VAT |
 | Invoices | UAE tax invoices from an accepted quotation: full, or a share such as a 50% advance and the balance; the INV-2026-0001 number is given only on **Issue** (drafts leave no gap) and the buyer's name / TRN / address are frozen then; issued invoices are cancelled, never edited; PDF by email / WhatsApp, payment reminders; payments by bank transfer, cheque, cash, card (admins) |
 | Receivables | Outstanding balances by customer: not yet due, 1–30, 31–60, 61–90, 90+ days overdue |
+| Subscriptions | Cloud plans and AMC contracts made from the recurring lines of an accepted quotation (or added on a lead); monthly / quarterly / yearly; MRR and ARR; due for renewal 7 / 15 / 30 days ahead by cycle; a background job every 6 hours drafts the renewal invoice for auto-renew subscriptions and schedules a call for the agent (nothing is sent to the customer automatically); issuing the renewal invoice moves the paid-up date, cancelling it moves it back; renewal reminders by email / WhatsApp |
 | Company Profile | Your legal name, TRN, address, bank, logo, quotation validity, discount limit and default quotation and invoice terms, invoice due days (admins) |
 | Companies | Customer businesses with UAE TRN, industry, size, address; their contacts and leads |
 | Contacts | People at those companies (job title), including everyone who wrote on WhatsApp or email |

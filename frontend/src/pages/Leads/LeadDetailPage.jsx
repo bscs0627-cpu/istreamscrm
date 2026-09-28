@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Target, Pencil, Trash2, MessagesSquare, Mail, Phone, CalendarClock, CheckCircle2, Plus, X, StickyNote, Users,
   Presentation, ArrowRightLeft, UserCheck, Sparkles, Bot, FileText, Receipt,
+  Repeat,
 } from "lucide-react";
 import { LeadService, FollowUpService } from "@/ServiceLayer/LeadService/LeadService";
 import { StaffService } from "@/ServiceLayer/AuthService/AuthService";
@@ -16,6 +17,7 @@ import {
 } from "@/lib/crm";
 import LeadForm from "./LeadForm";
 import LeadQuotations from "./LeadQuotations";
+import LeadSubscriptions from "./LeadSubscriptions";
 import { statusOf, priorityOf } from "./LeadsPage";
 
 const card = "bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm";
@@ -38,7 +40,7 @@ function Info({ label, value }) {
 
 const ACTIVITY_ICON = {
   NOTE: StickyNote, CALL: Phone, MEETING: Users, DEMO: Presentation, STATUS: ArrowRightLeft, ASSIGN: UserCheck, CREATED: Sparkles,
-  QUOTE: FileText, INVOICE: Receipt,
+  QUOTE: FileText, INVOICE: Receipt, SUBSCR: Repeat,
 };
 
 function TimelineItem({ t }) {
@@ -65,7 +67,7 @@ function TimelineItem({ t }) {
 
   const Icon = ACTIVITY_ICON[t.activityType] ?? StickyNote;
   const title = {
-    NOTE: "Note", CALL: `Call${t.outcome ? ` – ${labelOf(CALL_OUTCOMES, t.outcome)}` : ""}`, MEETING: "Meeting", DEMO: "Demo", QUOTE: "Quotation", INVOICE: "Invoice",
+    NOTE: "Note", CALL: `Call${t.outcome ? ` – ${labelOf(CALL_OUTCOMES, t.outcome)}` : ""}`, MEETING: "Meeting", DEMO: "Demo", QUOTE: "Quotation", INVOICE: "Invoice", SUBSCR: "Subscription",
     CREATED: t.byName ? "Lead created" : "Lead created automatically",
     ASSIGN: `Assigned to ${t.body}`,
     STATUS: `Status: ${t.statusFrom ? `${statusOf(t.statusFrom).label} → ` : ""}${statusOf(t.statusTo).label}`,
@@ -311,6 +313,7 @@ export default function LeadDetailPage() {
 
         <div className="space-y-4 min-w-0">
           <LeadQuotations lead={lead} onError={setError} />
+          <LeadSubscriptions lead={lead} onError={setError} onChanged={load} />
 
           <div className={`${card} p-4`}>
             <div className="flex items-center justify-between mb-3">

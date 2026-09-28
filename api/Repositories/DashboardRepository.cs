@@ -97,7 +97,7 @@ public class DashboardRepository : IDashboardRepository
             JOIN dbo.wsm_customers c ON c.customer_id = l.customer_id
             LEFT JOIN dbo.wsm_accounts ac ON ac.account_id = c.account_id
             LEFT JOIN dbo.wsm_users u ON u.user_id = a.created_by
-            WHERE a.company_id = @companyId AND a.activity_type IN ('CREATED', 'STATUS', 'DEMO', 'MEETING', 'CALL', 'QUOTE', 'INVOICE')
+            WHERE a.company_id = @companyId AND a.activity_type IN ('CREATED', 'STATUS', 'DEMO', 'MEETING', 'CALL', 'QUOTE', 'INVOICE', 'SUBSCR')
               AND (@onlyUserId IS NULL OR l.assigned_to = @onlyUserId)
             ORDER BY a.created_at DESC, a.activity_id DESC";
 

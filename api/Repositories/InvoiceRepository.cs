@@ -9,7 +9,8 @@ public interface IInvoiceRepository
     // today = the user's local date, for overdue. onlyUserId (staff) = invoices of leads assigned to them.
     Task<IEnumerable<InvoiceRow>> GetAllAsync(int companyId, int? onlyUserId, InvoiceFilter f, DateTime today);
     Task<InvoiceRow?> GetByIdAsync(int companyId, int invoiceId, DateTime today);
-    Task<InvoiceRow?> CreateAsync(int companyId, int leadId, int? quotationId, SaveInvoiceDto dto, int userId, DateTime today);
+    Task<InvoiceRow?> CreateAsync(int companyId, int leadId, int? quotationId, SaveInvoiceDto dto, int? userId, DateTime today,
+        int? subscriptionId = null, DateTime? periodStart = null, DateTime? periodEnd = null);
     Task<InvoiceRow?> UpdateDraftAsync(int companyId, int invoiceId, SaveInvoiceDto dto, DateTime today);
     Task<bool> DeleteDraftAsync(int companyId, int invoiceId);
     // Gives the next INV number for the invoice year and freezes the buyer details.
@@ -124,17 +125,20 @@ public class InvoiceRepository : IInvoiceRepository
             WHERE invoice_id = @invoiceId", new { invoiceId, gross, discount, vat });
     }
 
-    public async Task<InvoiceRow?> CreateAsync(int companyId, int leadId, int? quotationId, SaveInvoiceDto dto, int userId, DateTime today)
+    public async Task<InvoiceRow?> CreateAsync(int companyId, int leadId, int? quotationId, SaveInvoiceDto dto, int? userId, DateTime today,
+        int? subscriptionId = null, DateTime? periodStart = null, DateTime? periodEnd = null)
     {
         using var db = _factory.CreateConnection();
         var id = await db.ExecuteScalarAsync<int>(@"
-            INSERT INTO dbo.wsm_invoices (company_id, quotation_id, lead_id, stage, invoice_date, due_date, terms, notes, created_by)
-            VALUES (@companyId, @quotationId, @leadId, @Stage, @InvoiceDate, @DueDate, @Terms, @Notes, @userId);
+            INSERT INTO dbo.wsm_invoices (company_id, quotation_id, lead_id, stage, invoice_date, due_date, terms, notes, created_by,
+                                          subscription_id, period_start, period_end)
+            VALUES (@companyId, @quotationId, @leadId, @Stage, @InvoiceDate, @DueDate, @Terms, @Notes, @userId,
+                    @subscriptionId, @periodStart, @periodEnd);
             SELECT CAST(SCOPE_IDENTITY() AS INT);",
             new
             {
                 companyId, quotationId, leadId, userId, dto.Stage, InvoiceDate = dto.InvoiceDate.Date, DueDate = dto.DueDate.Date,
-                dto.Terms, dto.Notes
+                dto.Terms, dto.Notes, subscriptionId, periodStart = periodStart?.Date, periodEnd = periodEnd?.Date
             });
         await SaveLinesAsync(db, companyId, id, dto.Lines);
         return await GetByIdAsync(companyId, id, today);

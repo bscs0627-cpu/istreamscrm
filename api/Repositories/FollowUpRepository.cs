@@ -10,7 +10,7 @@ public interface IFollowUpRepository
     Task<IEnumerable<FollowUpRow>> GetListAsync(int companyId, int? onlyUserId, string view, int tzOffsetMinutes, int? assignedTo);
     Task<IEnumerable<FollowUpRow>> GetForLeadAsync(int companyId, int leadId);
     Task<FollowUpRow?> GetByIdAsync(int companyId, int followUpId);
-    Task<FollowUpRow?> CreateAsync(int companyId, int leadId, int? assignedTo, SaveFollowUpDto dto, int userId);
+    Task<FollowUpRow?> CreateAsync(int companyId, int leadId, int? assignedTo, SaveFollowUpDto dto, int? userId);
     Task CompleteAsync(int companyId, FollowUpRow f, string? result, int userId);
     Task<bool> DeleteAsync(int companyId, int followUpId);
     Task<(int Overdue, int Today)> CountsAsync(int companyId, int? onlyUserId, int tzOffsetMinutes);
@@ -77,7 +77,7 @@ public class FollowUpRepository : IFollowUpRepository
             Select + " WHERE f.company_id = @companyId AND f.follow_up_id = @followUpId", new { companyId, followUpId });
     }
 
-    public async Task<FollowUpRow?> CreateAsync(int companyId, int leadId, int? assignedTo, SaveFollowUpDto dto, int userId)
+    public async Task<FollowUpRow?> CreateAsync(int companyId, int leadId, int? assignedTo, SaveFollowUpDto dto, int? userId)
     {
         using var db = _factory.CreateConnection();
         var id = await db.ExecuteScalarAsync<int>(@"

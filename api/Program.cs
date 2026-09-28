@@ -86,6 +86,10 @@ builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<ICompanyProfileRepository, CompanyProfileRepository>();
 builder.Services.AddScoped<IQuotationRepository, QuotationRepository>();
 builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+builder.Services.AddScoped<RenewalService>();
+builder.Services.AddSingleton<RenewalWorker>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<RenewalWorker>());
 
 // QuestPDF: free Community licence (companies under USD 1M annual revenue); larger companies need a paid licence.
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;

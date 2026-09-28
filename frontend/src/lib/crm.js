@@ -130,6 +130,20 @@ export const PAYMENT_METHODS = [
   { value: "ONLINE", label: "Online payment" },
 ];
 
+export const BILLING_CYCLES = [
+  { value: "MONTHLY", label: "Monthly", months: 1 },
+  { value: "QUARTERLY", label: "Quarterly", months: 3 },
+  { value: "YEARLY", label: "Yearly", months: 12 },
+];
+
+export const SUBSCRIPTION_STATES = [
+  { value: "ACTIVE", label: "Active", cls: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
+  { value: "DUE", label: "Due for renewal", cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
+  { value: "EXPIRED", label: "Expired", cls: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
+  { value: "CANCELLED", label: "Cancelled", cls: "bg-gray-200 text-gray-500 line-through dark:bg-slate-700 dark:text-gray-400" },
+];
+export const subscriptionStateOf = (s) => SUBSCRIPTION_STATES.find((x) => x.value === s.state) ?? SUBSCRIPTION_STATES[0];
+
 export const quoteStatusOf =(s) => QUOTE_STATUSES.find((x) => x.value === s) ?? QUOTE_STATUSES[0];
 
 // Same rounding as the API: per line, 2 decimals.

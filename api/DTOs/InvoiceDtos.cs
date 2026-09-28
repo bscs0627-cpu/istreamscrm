@@ -9,6 +9,9 @@ public class InvoiceRow
     public int? InvSeq { get; set; }
     public string InvoiceNo => InvSeq is null ? $"Draft #{InvoiceId}" : $"INV-{InvYear}-{InvSeq:D4}";
     public int? QuotationId { get; set; }
+    public int? SubscriptionId { get; set; }
+    public DateTime? PeriodStart { get; set; }
+    public DateTime? PeriodEnd { get; set; }
     public int? QuoteYear { get; set; }
     public int? QuoteSeq { get; set; }
     public int? QuoteRevision { get; set; }
