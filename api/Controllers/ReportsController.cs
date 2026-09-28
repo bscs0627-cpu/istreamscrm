@@ -22,4 +22,26 @@ public class ReportsController : ControllerBase
         var agent = User.IsAdmin() ? agentId : User.UserId();
         return Ok(await _repo.LeadsAsync(User.CompanyId(), from.Date + offset, to.Date.AddDays(1) + offset, (int)offset.TotalMinutes, agent));
     }
+
+    [HttpGet("revenue")]
+    public async Task<IActionResult> Revenue([FromQuery] DateTime from, [FromQuery] DateTime to, [FromQuery] int tzOffset, [FromQuery] int? agentId)
+    {
+        if (to < from) return BadRequest(new { message = "The end date is before the start date." });
+        if ((to - from).TotalDays > 731) return BadRequest(new { message = "Choose a period of up to 2 years." });
+
+        var offset = TimeSpan.FromMinutes(Math.Clamp(tzOffset, -840, 840));
+        var agent = User.IsAdmin() ? agentId : User.UserId();
+        return Ok(await _repo.RevenueAsync(User.CompanyId(), from.Date + offset, to.Date.AddDays(1) + offset, (int)offset.TotalMinutes, agent));
+    }
+
+    [HttpGet("tickets")]
+    public async Task<IActionResult> Tickets([FromQuery] DateTime from, [FromQuery] DateTime to, [FromQuery] int tzOffset, [FromQuery] int? agentId)
+    {
+        if (to < from) return BadRequest(new { message = "The end date is before the start date." });
+        if ((to - from).TotalDays > 731) return BadRequest(new { message = "Choose a period of up to 2 years." });
+
+        var offset = TimeSpan.FromMinutes(Math.Clamp(tzOffset, -840, 840));
+        var agent = User.IsAdmin() ? agentId : User.UserId();
+        return Ok(await _repo.TicketsAsync(User.CompanyId(), from.Date + offset, to.Date.AddDays(1) + offset, agent));
+    }
 }

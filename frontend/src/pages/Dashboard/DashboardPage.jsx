@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import {
   LayoutDashboard, RefreshCw, Users, UserPlus, Inbox, MailWarning, MessageSquare, Clock, CalendarClock, AlarmClock,
   Target, Snowflake, CheckCircle2, Banknote, Presentation, FileText, Receipt, Sparkles, ArrowRightLeft, Phone, ArrowRight, Bot,
-  Repeat,
+  Repeat, LifeBuoy, TrendingUp, Wallet,
 } from "lucide-react";
 import { DashboardService } from "@/ServiceLayer/WhatsAppService/WhatsAppService";
 import { FollowUpService } from "@/ServiceLayer/LeadService/LeadService";
@@ -91,6 +91,9 @@ export default function DashboardPage() {
   const s = data?.stats;
   const w = data?.work;
   const m = data?.month;
+  const rev = data?.revenue;
+  const subs = data?.subscriptions;
+  const tix = data?.tickets;
   const pipeline = LEAD_STATUSES.filter((st) => !CLOSED_STATUSES.includes(st.value))
     .map((st) => ({ ...st, count: data?.pipeline.find((p) => p.status === st.value)?.leads ?? 0 }));
 
@@ -200,6 +203,26 @@ export default function DashboardPage() {
         </div>
       </Section>
 
+      <Section title="Business" action={<MoreLink to="/reports">Full reports</MoreLink>}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <StatCard icon={Receipt} label="Invoiced this month" value={rev ? formatAed(rev.invoiced) : null} to="/invoices" />
+          <StatCard icon={Wallet} label="Collected this month" value={rev ? formatAed(rev.collected) : null} tone="green" to="/receivables" />
+          <StatCard icon={Banknote} label="Outstanding" value={rev ? formatAed(rev.outstandingNow) : null}
+            tone={rev?.overdueNow > 0 ? "red" : "blue"} hint={rev?.overdueNow > 0 ? `${formatAed(rev.overdueNow)} overdue` : "none overdue"} to="/receivables" />
+          <StatCard icon={TrendingUp} label="MRR" value={rev ? formatAed(rev.mrr) : null} tone="green" hint={rev ? `${formatAed(rev.arr)} ARR` : null} to="/subscriptions" />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <StatCard icon={Repeat} label="Subscriptions due" value={subs?.dueSoon} tone={subs?.dueSoon > 0 ? "amber" : "blue"}
+            hint={subs?.expired > 0 ? `${subs.expired} expired` : "renewing soon"} to="/subscriptions" />
+          <StatCard icon={LifeBuoy} label="Open tickets" value={tix?.open} to="/tickets" />
+          <StatCard icon={AlarmClock} label="Overdue tickets" value={tix?.overdue} tone={tix?.overdue > 0 ? "red" : "blue"} to="/tickets?view=OVERDUE" />
+          {isAdmin ? (
+            <StatCard icon={Inbox} label="Unassigned tickets" value={tix?.unassigned} tone={tix?.unassigned > 0 ? "amber" : "blue"} to="/tickets?view=UNASSIGNED" />
+          ) : (
+            <StatCard icon={LifeBuoy} label="Assigned to me" value={tix?.mine} to="/tickets?view=MINE" />
+          )}
+        </div>
+      </Section>
 
       <Section title="Chats">
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">

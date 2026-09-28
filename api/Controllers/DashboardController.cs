@@ -12,13 +12,18 @@ public class DashboardController : ControllerBase
     private readonly IFollowUpRepository _followUps;
     private readonly ILeadRepository _leads;
     private readonly IReportRepository _reports;
+    private readonly ISubscriptionRepository _subs;
+    private readonly ITicketRepository _tickets;
 
-    public DashboardController(IDashboardRepository repo, IFollowUpRepository followUps, ILeadRepository leads, IReportRepository reports)
+    public DashboardController(IDashboardRepository repo, IFollowUpRepository followUps, ILeadRepository leads, IReportRepository reports,
+        ISubscriptionRepository subs, ITicketRepository tickets)
     {
         _repo = repo;
         _followUps = followUps;
         _leads = leads;
         _reports = reports;
+        _subs = subs;
+        _tickets = tickets;
     }
 
     // tzOffset: the browser's getTimezoneOffset() in minutes, so "today" and "this month" mean the user's local calendar.
@@ -38,6 +43,7 @@ public class DashboardController : ControllerBase
             .Concat(await _followUps.GetListAsync(companyId, scope, "today", tzOffset, null))
             .Take(5);
         var month = await _reports.LeadsAsync(companyId, monthStartUtc, todayStartUtc.AddDays(1), tzOffset, scope);
+        var revenue = await _reports.RevenueAsync(companyId, monthStartUtc, todayStartUtc.AddDays(1), tzOffset, scope);
 
         return Ok(new
         {
@@ -45,6 +51,9 @@ public class DashboardController : ControllerBase
             work = await _repo.GetWorkAsync(companyId, scope, todayStartUtc),
             nextFollowUps,
             month = month.Summary,
+            revenue = revenue.Summary,
+            subscriptions = await _subs.SummaryAsync(companyId, scope, todayStartUtc),
+            tickets = await _tickets.SummaryAsync(companyId, scope, User.UserId()),
             pipeline = await _leads.StatusCountsAsync(companyId, scope),
             activity = await _repo.GetRecentActivityAsync(companyId, scope),
             staff = admin ? await _repo.GetStaffLoadAsync(companyId, todayStartUtc, monthStartUtc) : null

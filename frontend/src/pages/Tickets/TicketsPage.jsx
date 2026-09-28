@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { LifeBuoy, RefreshCw, Search, Plus, MessageSquare } from "lucide-react";
 import { TicketService } from "@/ServiceLayer/TicketService/TicketService";
 import { Alerts, inputCls } from "@/components/common/ui";
@@ -40,9 +40,10 @@ export function dueText(t) {
 export default function TicketsPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const [rows, setRows] = useState([]);
   const [summary, setSummary] = useState(null);
-  const [filters, setFilters] = useState({ search: "", view: "OPEN", type: "", priority: "" });
+  const [filters, setFilters] = useState({ search: "", view: params.get("view") ?? "OPEN", type: params.get("type") ?? "", priority: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [newTicket, setNewTicket] = useState(location.state?.newTicket ?? null);

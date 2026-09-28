@@ -5,10 +5,11 @@ import { StaffService } from "@/ServiceLayer/AuthService/AuthService";
 import { useAuth } from "@/context/AuthContext";
 import { Alerts, inputCls, labelCls } from "@/components/common/ui";
 import { formatDate } from "@/lib/utils";
-import { LEAD_STATUSES, LEAD_SOURCES, labelOf, formatAed } from "@/lib/crm";
+import { LEAD_STATUSES, LEAD_SOURCES, TICKET_CATEGORIES, TICKET_TYPES, labelOf, formatAed } from "@/lib/crm";
 
 const card = "bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm";
 const bar = "bg-blue-600 dark:bg-blue-500";
+const bar2 = "bg-green-500 dark:bg-green-500";
 const track = "bg-gray-100 dark:bg-slate-800";
 
 const pad = (n) => String(n).padStart(2, "0");
@@ -23,7 +24,14 @@ const PRESETS = {
   custom: { label: "Custom range" },
 };
 
+const TABS = [
+  { value: "leads", label: "Leads & Conversion" },
+  { value: "revenue", label: "Revenue" },
+  { value: "tickets", label: "Support" },
+];
+
 const pct = (a, b) => (b > 0 ? `${Math.round((a / b) * 100)}%` : "—");
+const hrs = (h) => (h === null || h === undefined ? "—" : h < 1 ? `${Math.round(h * 60)}m` : h < 48 ? `${h.toFixed(1)}h` : `${(h / 24).toFixed(1)}d`);
 
 function Stat({ label, value, hint }) {
   return (
@@ -35,16 +43,20 @@ function Stat({ label, value, hint }) {
   );
 }
 
-// Days in the period, zero-filled; grouped by week when the period is long.
-function buildSeries(byDay, from, to) {
-  const counts = Object.fromEntries(byDay.map((d) => [d.day.slice(0, 10), d.leads]));
+// Days in the period, zero-filled; grouped by week when the period is long. `keys` are the numeric fields to sum per day.
+function buildSeries(byDay, from, to, keys) {
+  const map = Object.fromEntries(byDay.map((d) => [d.day.slice(0, 10), d]));
+  const zero = Object.fromEntries(keys.map((k) => [k, 0]));
   const days = [];
-  for (let d = new Date(`${from}T00:00:00`); iso(d) <= to; d.setDate(d.getDate() + 1)) days.push({ day: iso(d), leads: counts[iso(d)] ?? 0 });
-  if (days.length <= 62) return { weekly: false, points: days.map((d) => ({ label: formatDate(d.day), leads: d.leads })) };
+  for (let d = new Date(`${from}T00:00:00`); iso(d) <= to; d.setDate(d.getDate() + 1)) {
+    const row = map[iso(d)];
+    days.push({ day: iso(d), ...zero, ...(row ? Object.fromEntries(keys.map((k) => [k, row[k] ?? 0])) : {}) });
+  }
+  if (days.length <= 62) return { weekly: false, points: days.map((d) => ({ label: formatDate(d.day), ...Object.fromEntries(keys.map((k) => [k, d[k]])) })) };
   const weeks = [];
   days.forEach((d, i) => {
-    if (i % 7 === 0) weeks.push({ label: `Week of ${formatDate(d.day)}`, leads: 0 });
-    weeks[weeks.length - 1].leads += d.leads;
+    if (i % 7 === 0) weeks.push({ label: `Week of ${formatDate(d.day)}`, ...zero });
+    keys.forEach((k) => { weeks[weeks.length - 1][k] += d[k]; });
   });
   return { weekly: true, points: weeks };
 }
@@ -78,7 +90,43 @@ function LeadsOverTime({ series }) {
   );
 }
 
-function HBars({ title, rows, empty }) {
+// Two overlaid bars per day: invoiced (blue) behind, collected (green) in front.
+function RevenueOverTime({ series }) {
+  const max = Math.max(1, ...series.points.map((p) => Math.max(p.invoiced, p.collected)));
+  const n = series.points.length;
+  return (
+    <div className={`${card} p-4`}>
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Invoiced vs collected {series.weekly ? "per week" : "per day"}</h3>
+        <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+          <span className="inline-flex items-center gap-1"><span className={`h-2 w-2 rounded-sm ${bar}`} /> Invoiced</span>
+          <span className="inline-flex items-center gap-1"><span className={`h-2 w-2 rounded-sm ${bar2}`} /> Collected</span>
+        </div>
+      </div>
+      <div className="mt-3 flex h-40 items-end gap-[2px] border-b border-gray-200 dark:border-slate-700">
+        {series.points.map((p, i) => (
+          <div key={i} className="group relative flex h-full flex-1 items-end justify-center">
+            <div className="relative w-full max-w-6" style={{ height: "100%" }}>
+              <div className={`absolute bottom-0 w-full rounded-t ${p.invoiced ? bar : ""} opacity-60`} style={{ height: `${(p.invoiced / max) * 100}%` }} />
+              <div className={`absolute bottom-0 w-full rounded-t ${p.collected ? bar2 : ""}`} style={{ height: `${(p.collected / max) * 100}%`, maxWidth: "60%", left: "20%" }} />
+            </div>
+            <div className="pointer-events-none absolute bottom-full z-10 mb-1 hidden whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs text-white shadow group-hover:block">
+              {p.label}: {formatAed(p.invoiced)} invoiced, {formatAed(p.collected)} collected
+            </div>
+          </div>
+        ))}
+      </div>
+      {n > 0 && (
+        <div className="mt-1 flex justify-between text-[11px] text-gray-400">
+          <span>{series.points[0].label}</span>
+          {n > 1 && <span>{series.points[n - 1].label}</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HBars({ title, rows, empty, colorClass = bar }) {
   const max = Math.max(1, ...rows.map((r) => r.value));
   return (
     <div className={`${card} p-4`}>
@@ -89,10 +137,10 @@ function HBars({ title, rows, empty }) {
             <li key={r.label} className="grid grid-cols-[130px_1fr_auto] items-center gap-3 text-sm" title={`${r.label}: ${r.value}${r.note ? ` · ${r.note}` : ""}`}>
               <span className="truncate text-gray-600 dark:text-gray-300">{r.label}</span>
               <div className={`h-3 rounded ${track}`}>
-                <div className={`h-3 rounded ${bar}`} style={{ width: `${(r.value / max) * 100}%` }} />
+                <div className={`h-3 rounded ${colorClass}`} style={{ width: `${(r.value / max) * 100}%` }} />
               </div>
-              <span className="w-20 text-right tabular-nums text-gray-900 dark:text-white">
-                {r.value}{r.note && <span className="ml-1 text-xs text-gray-400">{r.note}</span>}
+              <span className="w-24 text-right tabular-nums text-gray-900 dark:text-white">
+                {r.display ?? r.value}{r.note && <span className="ml-1 text-xs text-gray-400">{r.note}</span>}
               </span>
             </li>
           ))}
@@ -102,54 +150,248 @@ function HBars({ title, rows, empty }) {
   );
 }
 
+function PeriodPicker({ preset, choosePreset, range, setCustom, isAdmin, agentId, setAgentId, staff }) {
+  return (
+    <div className="flex flex-wrap items-end gap-3">
+      <div>
+        <label className={labelCls}>Period</label>
+        <select value={preset} onChange={(e) => choosePreset(e.target.value)} className={`${inputCls.replace("w-full ", "")} w-40`}>
+          {Object.entries(PRESETS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+        </select>
+      </div>
+      {preset === "custom" ? (
+        <>
+          <div><label className={labelCls}>From</label><input type="date" value={range[0]} onChange={setCustom(0)} className={`${inputCls.replace("w-full ", "")} w-40`} /></div>
+          <div><label className={labelCls}>To</label><input type="date" value={range[1]} onChange={setCustom(1)} className={`${inputCls.replace("w-full ", "")} w-40`} /></div>
+        </>
+      ) : (
+        <span className="pb-2 text-sm text-gray-500 dark:text-gray-400">{formatDate(range[0])} – {formatDate(range[1])}</span>
+      )}
+      {isAdmin && (
+        <div>
+          <label className={labelCls}>Agent</label>
+          <select value={agentId} onChange={(e) => setAgentId(e.target.value)} className={`${inputCls.replace("w-full ", "")} w-44`}>
+            <option value="">All agents</option>
+            {staff.map((u) => <option key={u.userId} value={u.userId}>{u.fullName}{u.isActive === "T" ? "" : " (inactive)"}</option>)}
+          </select>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LeadsReport({ range, agentId, isAdmin }) {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    client.get("/reports/leads", { params: { from: range[0], to: range[1], tzOffset: new Date().getTimezoneOffset(), agentId: agentId || undefined } })
+      .then((res) => { setError(""); setData({ ...res.data, from: range[0], to: range[1] }); })
+      .catch((err) => setError(apiError(err, "Failed to load the report.")));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [range[0], range[1], agentId]);
+
+  const series = useMemo(() => (data ? buildSeries(data.byDay, data.from, data.to, ["leads"]) : null), [data]);
+  const s = data?.summary;
+  const statusRows = data ? LEAD_STATUSES.map((st) => ({ label: st.label, value: data.byStatus.find((x) => x.key === st.value)?.leads ?? 0 })).filter((r) => r.value > 0) : [];
+  const sourceRows = data ? data.bySource.map((x) => ({ label: labelOf(LEAD_SOURCES, x.key), value: x.leads, note: x.won ? `${x.won} won` : "" })) : [];
+
+  if (!s) return <Alerts error={error} onClearError={() => setError("")} />;
+  return (
+    <>
+      <Alerts error={error} onClearError={() => setError("")} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Stat label="New Leads" value={s.newLeads} hint="created in the period" />
+        <Stat label="Conversion" value={pct(s.newLeadsWon, s.newLeads)} hint={`${s.newLeadsWon} of the new leads are won`} />
+        <Stat label="Deals Won" value={s.dealsWon} hint={`win rate ${pct(s.dealsWon, s.dealsWon + s.dealsLost)} of ${s.dealsWon + s.dealsLost} closed`} />
+        <Stat label="Deal Value" value={formatAed(s.dealValue) || "AED 0"} hint="deals won, before VAT" />
+        <Stat label="Open Leads" value={s.openLeads} hint="right now" />
+        <Stat label="Deals Lost" value={s.dealsLost} hint="lost / not interested in the period" />
+        <Stat label="Overdue Follow-ups" value={s.overdueFollowUps} hint="right now" />
+        <Stat label="Avg. Deal" value={s.dealsWon ? formatAed(s.dealValue / s.dealsWon) : "—"} hint="deal value ÷ deals won" />
+      </div>
+
+      <LeadsOverTime series={series} />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <HBars title="New leads by current status" rows={statusRows} empty="No leads created in this period." />
+        <HBars title="New leads by source" rows={sourceRows} empty="No leads created in this period." />
+      </div>
+
+      <div className={`${card} overflow-hidden`}>
+        <h3 className="px-4 pt-4 pb-3 text-sm font-semibold text-gray-900 dark:text-white">{isAdmin ? "Agent performance" : "My performance"}</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm whitespace-nowrap">
+            <thead className="bg-gray-50 dark:bg-slate-800 border-y border-gray-200 dark:border-slate-700">
+              <tr className="text-left text-gray-600 dark:text-gray-300">
+                <th className="px-4 py-2.5 font-medium">Agent</th>
+                <th className="px-4 py-2.5 font-medium text-right">New Leads</th>
+                <th className="px-4 py-2.5 font-medium text-right">Still Open</th>
+                <th className="px-4 py-2.5 font-medium text-right">Won</th>
+                <th className="px-4 py-2.5 font-medium text-right">Lost</th>
+                <th className="px-4 py-2.5 font-medium text-right">Conversion</th>
+                <th className="px-4 py-2.5 font-medium text-right">Deals Closed</th>
+                <th className="px-4 py-2.5 font-medium text-right">Deal Value</th>
+                <th className="px-4 py-2.5 font-medium text-right">Follow-ups Done</th>
+                <th className="px-4 py-2.5 font-medium text-right">Overdue</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.byAgent.length === 0 && (
+                <tr><td colSpan={10} className="px-4 py-8 text-center text-gray-400">No activity in this period.</td></tr>
+              )}
+              {data.byAgent.map((a) => (
+                <tr key={a.userId ?? "none"} className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors tabular-nums">
+                  <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">{a.fullName ?? <span className="text-amber-600">Unassigned</span>}</td>
+                  <td className="px-4 py-2.5 text-right text-gray-700 dark:text-gray-200">{a.leads}</td>
+                  <td className="px-4 py-2.5 text-right text-gray-700 dark:text-gray-200">{a.open}</td>
+                  <td className="px-4 py-2.5 text-right text-gray-700 dark:text-gray-200">{a.won}</td>
+                  <td className="px-4 py-2.5 text-right text-gray-700 dark:text-gray-200">{a.lost}</td>
+                  <td className="px-4 py-2.5 text-right text-gray-700 dark:text-gray-200">{pct(a.won, a.leads)}</td>
+                  <td className="px-4 py-2.5 text-right text-gray-700 dark:text-gray-200">{a.dealsWon}</td>
+                  <td className="px-4 py-2.5 text-right text-gray-900 dark:text-white">{a.dealValue ? formatAed(a.dealValue) : "—"}</td>
+                  <td className="px-4 py-2.5 text-right text-gray-700 dark:text-gray-200">{a.followUpsDone}</td>
+                  <td className={`px-4 py-2.5 text-right ${a.overdueFollowUps ? "font-semibold text-red-600" : "text-gray-700 dark:text-gray-200"}`}>{a.overdueFollowUps}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="px-4 py-3 text-xs text-gray-400">
+          New Leads, Still Open, Won, Lost and Conversion count leads created in the period. Deals Closed and Deal Value count deals won in the period. Overdue is right now.
+        </p>
+      </div>
+    </>
+  );
+}
+
+function RevenueReport({ range, agentId }) {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    client.get("/reports/revenue", { params: { from: range[0], to: range[1], tzOffset: new Date().getTimezoneOffset(), agentId: agentId || undefined } })
+      .then((res) => { setError(""); setData({ ...res.data, from: range[0], to: range[1] }); })
+      .catch((err) => setError(apiError(err, "Failed to load the report.")));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [range[0], range[1], agentId]);
+
+  const series = useMemo(() => (data ? buildSeries(data.byDay, data.from, data.to, ["invoiced", "collected"]) : null), [data]);
+  const s = data?.summary;
+  const productRows = data ? data.byProduct.slice(0, 10).map((p) => ({ label: p.product, value: p.amount, display: formatAed(p.amount), note: `${p.lines} line${p.lines === 1 ? "" : "s"}` })) : [];
+
+  if (!s) return <Alerts error={error} onClearError={() => setError("")} />;
+  return (
+    <>
+      <Alerts error={error} onClearError={() => setError("")} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Stat label="Quotations Sent" value={s.quotesSent} hint={formatAed(s.quotedValue) || "AED 0"} />
+        <Stat label="Quotations Accepted" value={s.quotesAccepted} hint={`win rate ${pct(s.quotesAccepted, s.quotesSent)}`} />
+        <Stat label="Accepted Value" value={formatAed(s.acceptedValue) || "AED 0"} hint="before VAT" />
+        <Stat label="Invoices Issued" value={s.invoicesIssued} hint={formatAed(s.invoiced) || "AED 0"} />
+        <Stat label="Collected" value={formatAed(s.collected) || "AED 0"} hint="payments received in the period" />
+        <Stat label="Outstanding Now" value={formatAed(s.outstandingNow) || "AED 0"} hint={s.overdueNow > 0 ? `${formatAed(s.overdueNow)} overdue` : "none overdue"} />
+        <Stat label="MRR" value={formatAed(s.mrr) || "AED 0"} hint="active subscriptions, normalized" />
+        <Stat label="ARR" value={formatAed(s.arr) || "AED 0"} hint="MRR × 12" />
+      </div>
+
+      <RevenueOverTime series={series} />
+
+      <HBars title="Top products / services invoiced" rows={productRows} empty="No invoices issued in this period." colorClass={bar2} />
+    </>
+  );
+}
+
+function TicketsReport({ range, agentId, isAdmin }) {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    client.get("/reports/tickets", { params: { from: range[0], to: range[1], tzOffset: new Date().getTimezoneOffset(), agentId: agentId || undefined } })
+      .then((res) => { setError(""); setData(res.data); })
+      .catch((err) => setError(apiError(err, "Failed to load the report.")));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [range[0], range[1], agentId]);
+
+  const s = data?.summary;
+  const categoryRows = data ? data.byCategory.map((c) => ({ label: labelOf(TICKET_CATEGORIES, c.key), value: c.count })) : [];
+  const typeRows = data ? data.byType.map((t) => ({ label: labelOf(TICKET_TYPES, t.key), value: t.count })) : [];
+
+  if (!s) return <Alerts error={error} onClearError={() => setError("")} />;
+  return (
+    <>
+      <Alerts error={error} onClearError={() => setError("")} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Stat label="Opened" value={s.opened} hint="created in the period" />
+        <Stat label="Resolved" value={s.resolved} hint="resolved in the period" />
+        <Stat label="SLA Met" value={pct(s.metSla, s.metSla + s.missedSla)} hint={`${s.metSla} of ${s.metSla + s.missedSla} resolved on time`} />
+        <Stat label="Reopened" value={s.reopened} hint="customer replied while waiting" />
+        <Stat label="Avg. Resolution" value={hrs(s.avgResolutionHours)} hint="created to resolved" />
+        <Stat label="Avg. First Response" value={hrs(s.avgFirstResponseHours)} hint="created to first reply" />
+        <Stat label="Still Open" value={s.stillOpen} hint="right now" />
+        <Stat label="Still Overdue" value={s.stillOverdue} hint="right now" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <HBars title="Opened by category" rows={categoryRows} empty="No tickets opened in this period." />
+        <HBars title="Opened by type" rows={typeRows} empty="No tickets opened in this period." colorClass={bar2} />
+      </div>
+
+      <div className={`${card} overflow-hidden`}>
+        <h3 className="px-4 pt-4 pb-3 text-sm font-semibold text-gray-900 dark:text-white">{isAdmin ? "Agent performance" : "My performance"}</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm whitespace-nowrap">
+            <thead className="bg-gray-50 dark:bg-slate-800 border-y border-gray-200 dark:border-slate-700">
+              <tr className="text-left text-gray-600 dark:text-gray-300">
+                <th className="px-4 py-2.5 font-medium">Agent</th>
+                <th className="px-4 py-2.5 font-medium text-right">Resolved</th>
+                <th className="px-4 py-2.5 font-medium text-right">SLA Met</th>
+                <th className="px-4 py-2.5 font-medium text-right">Avg. Resolution</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(data?.byAgent ?? []).length === 0 && (
+                <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-400">No tickets resolved in this period.</td></tr>
+              )}
+              {data?.byAgent.map((a) => (
+                <tr key={a.userId ?? "none"} className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors tabular-nums">
+                  <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">{a.fullName ?? <span className="text-amber-600">Unassigned</span>}</td>
+                  <td className="px-4 py-2.5 text-right text-gray-700 dark:text-gray-200">{a.resolved}</td>
+                  <td className="px-4 py-2.5 text-right text-gray-700 dark:text-gray-200">{pct(a.metSla, a.resolved)}</td>
+                  <td className="px-4 py-2.5 text-right text-gray-700 dark:text-gray-200">{hrs(a.avgResolutionHours)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function ReportsPage() {
   const { isAdmin } = useAuth();
+  const [tab, setTab] = useState("leads");
   const [preset, setPreset] = useState("thisMonth");
   const [range, setRange] = useState(() => PRESETS.thisMonth.range(new Date()).map(iso));
   const [agentId, setAgentId] = useState("");
   const [staff, setStaff] = useState([]);
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const load = async (r = range, a = agentId) => {
-    setLoading(true); setError("");
-    try {
-      const res = await client.get("/reports/leads", {
-        params: { from: r[0], to: r[1], tzOffset: new Date().getTimezoneOffset(), agentId: a || undefined },
-      });
-      setData({ ...res.data, from: r[0], to: r[1] });
-    } catch (err) { setError(apiError(err, "Failed to load the report.")); }
-    finally { setLoading(false); }
-  };
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    load();
     if (isAdmin) StaffService.getAll().then(setStaff).catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isAdmin]);
 
   const choosePreset = (p) => {
     setPreset(p);
     if (p === "custom") return;
-    const r = PRESETS[p].range(new Date()).map(iso);
-    setRange(r); load(r);
+    setRange(PRESETS[p].range(new Date()).map(iso));
   };
 
   const setCustom = (i) => (e) => {
-    const r = [...range]; r[i] = e.target.value; setRange(r);
-    if (r[0] && r[1] && r[0] <= r[1]) load(r);
+    const r = [...range]; r[i] = e.target.value;
+    if (r[0] && r[1] && r[0] <= r[1]) setRange(r);
   };
-
-  const series = useMemo(() => (data ? buildSeries(data.byDay, data.from, data.to) : null), [data]);
-  const s = data?.summary;
-
-  const statusRows = data ? LEAD_STATUSES
-    .map((st) => ({ label: st.label, value: data.byStatus.find((x) => x.key === st.value)?.leads ?? 0 }))
-    .filter((r) => r.value > 0) : [];
-  const sourceRows = data ? data.bySource.map((x) => ({
-    label: labelOf(LEAD_SOURCES, x.key), value: x.leads, note: x.won ? `${x.won} won` : "",
-  })) : [];
 
   return (
     <div className="p-6 space-y-4">
@@ -158,107 +400,28 @@ export default function ReportsPage() {
           <div className="rounded-xl bg-blue-600/10 p-2"><BarChart3 className="h-6 w-6 text-blue-600" /></div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{isAdmin ? "Leads, conversions and agent performance" : "Your leads and results"}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{isAdmin ? "Leads, revenue, support and agent performance" : "Your leads, revenue and results"}</p>
           </div>
         </div>
-        <button onClick={() => load()} className="inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800">
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
+        <button onClick={() => setRefreshKey((k) => k + 1)} className="inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800">
+          <RefreshCw className="h-4 w-4" /> Refresh
         </button>
       </div>
 
-      <div className="flex flex-wrap items-end gap-3">
-        <div>
-          <label className={labelCls}>Period</label>
-          <select value={preset} onChange={(e) => choosePreset(e.target.value)} className={`${inputCls.replace("w-full ", "")} w-40`}>
-            {Object.entries(PRESETS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-          </select>
-        </div>
-        {preset === "custom" ? (
-          <>
-            <div><label className={labelCls}>From</label><input type="date" value={range[0]} onChange={setCustom(0)} className={`${inputCls.replace("w-full ", "")} w-40`} /></div>
-            <div><label className={labelCls}>To</label><input type="date" value={range[1]} onChange={setCustom(1)} className={`${inputCls.replace("w-full ", "")} w-40`} /></div>
-          </>
-        ) : (
-          <span className="pb-2 text-sm text-gray-500 dark:text-gray-400">{formatDate(range[0])} – {formatDate(range[1])}</span>
-        )}
-        {isAdmin && (
-          <div>
-            <label className={labelCls}>Agent</label>
-            <select value={agentId} onChange={(e) => { setAgentId(e.target.value); load(range, e.target.value); }} className={`${inputCls.replace("w-full ", "")} w-44`}>
-              <option value="">All agents</option>
-              {staff.map((u) => <option key={u.userId} value={u.userId}>{u.fullName}{u.isActive === "T" ? "" : " (inactive)"}</option>)}
-            </select>
-          </div>
-        )}
+      <div className="flex gap-2 border-b border-gray-200 dark:border-slate-800">
+        {TABS.map((t) => (
+          <button key={t.value} onClick={() => setTab(t.value)}
+            className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px ${tab === t.value ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"}`}>
+            {t.label}
+          </button>
+        ))}
       </div>
 
-      <Alerts error={error} onClearError={() => setError("")} />
+      <PeriodPicker preset={preset} choosePreset={choosePreset} range={range} setCustom={setCustom} isAdmin={isAdmin} agentId={agentId} setAgentId={setAgentId} staff={staff} />
 
-      {s && (
-        <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Stat label="New Leads" value={s.newLeads} hint="created in the period" />
-            <Stat label="Conversion" value={pct(s.newLeadsWon, s.newLeads)} hint={`${s.newLeadsWon} of the new leads are won`} />
-            <Stat label="Deals Won" value={s.dealsWon} hint={`win rate ${pct(s.dealsWon, s.dealsWon + s.dealsLost)} of ${s.dealsWon + s.dealsLost} closed`} />
-            <Stat label="Deal Value" value={formatAed(s.dealValue) || "AED 0"} hint="deals won, before VAT" />
-            <Stat label="Open Leads" value={s.openLeads} hint="right now" />
-            <Stat label="Deals Lost" value={s.dealsLost} hint="lost / not interested in the period" />
-            <Stat label="Overdue Follow-ups" value={s.overdueFollowUps} hint="right now" />
-            <Stat label="Avg. Deal" value={s.dealsWon ? formatAed(s.dealValue / s.dealsWon) : "—"} hint="deal value ÷ deals won" />
-          </div>
-
-          <LeadsOverTime series={series} />
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <HBars title="New leads by current status" rows={statusRows} empty="No leads created in this period." />
-            <HBars title="New leads by source" rows={sourceRows} empty="No leads created in this period." />
-          </div>
-
-          <div className={`${card} overflow-hidden`}>
-            <h3 className="px-4 pt-4 pb-3 text-sm font-semibold text-gray-900 dark:text-white">{isAdmin ? "Agent performance" : "My performance"}</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm whitespace-nowrap">
-                <thead className="bg-gray-50 dark:bg-slate-800 border-y border-gray-200 dark:border-slate-700">
-                  <tr className="text-left text-gray-600 dark:text-gray-300">
-                    <th className="px-4 py-2.5 font-medium">Agent</th>
-                    <th className="px-4 py-2.5 font-medium text-right">New Leads</th>
-                    <th className="px-4 py-2.5 font-medium text-right">Still Open</th>
-                    <th className="px-4 py-2.5 font-medium text-right">Won</th>
-                    <th className="px-4 py-2.5 font-medium text-right">Lost</th>
-                    <th className="px-4 py-2.5 font-medium text-right">Conversion</th>
-                    <th className="px-4 py-2.5 font-medium text-right">Deals Closed</th>
-                    <th className="px-4 py-2.5 font-medium text-right">Deal Value</th>
-                    <th className="px-4 py-2.5 font-medium text-right">Follow-ups Done</th>
-                    <th className="px-4 py-2.5 font-medium text-right">Overdue</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.byAgent.length === 0 && (
-                    <tr><td colSpan={10} className="px-4 py-8 text-center text-gray-400">No activity in this period.</td></tr>
-                  )}
-                  {data.byAgent.map((a) => (
-                    <tr key={a.userId ?? "none"} className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors tabular-nums">
-                      <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">{a.fullName ?? <span className="text-amber-600">Unassigned</span>}</td>
-                      <td className="px-4 py-2.5 text-right text-gray-700 dark:text-gray-200">{a.leads}</td>
-                      <td className="px-4 py-2.5 text-right text-gray-700 dark:text-gray-200">{a.open}</td>
-                      <td className="px-4 py-2.5 text-right text-gray-700 dark:text-gray-200">{a.won}</td>
-                      <td className="px-4 py-2.5 text-right text-gray-700 dark:text-gray-200">{a.lost}</td>
-                      <td className="px-4 py-2.5 text-right text-gray-700 dark:text-gray-200">{pct(a.won, a.leads)}</td>
-                      <td className="px-4 py-2.5 text-right text-gray-700 dark:text-gray-200">{a.dealsWon}</td>
-                      <td className="px-4 py-2.5 text-right text-gray-900 dark:text-white">{a.dealValue ? formatAed(a.dealValue) : "—"}</td>
-                      <td className="px-4 py-2.5 text-right text-gray-700 dark:text-gray-200">{a.followUpsDone}</td>
-                      <td className={`px-4 py-2.5 text-right ${a.overdueFollowUps ? "font-semibold text-red-600" : "text-gray-700 dark:text-gray-200"}`}>{a.overdueFollowUps}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="px-4 py-3 text-xs text-gray-400">
-              New Leads, Still Open, Won, Lost and Conversion count leads created in the period. Deals Closed and Deal Value count deals won in the period. Overdue is right now.
-            </p>
-          </div>
-        </>
-      )}
+      {tab === "leads" && <LeadsReport key={`leads-${refreshKey}`} range={range} agentId={agentId} isAdmin={isAdmin} />}
+      {tab === "revenue" && <RevenueReport key={`revenue-${refreshKey}`} range={range} agentId={agentId} />}
+      {tab === "tickets" && <TicketsReport key={`tickets-${refreshKey}`} range={range} agentId={agentId} isAdmin={isAdmin} />}
     </div>
   );
 }

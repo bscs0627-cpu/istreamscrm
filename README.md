@@ -43,7 +43,7 @@ cd frontend && npm run dev
 
 | Menu | What it does |
 |---|---|
-| Dashboard | Today's follow-ups and demos, new / unassigned / cold leads, recent activity, this month's deals, pipeline, chats, staff |
+| Dashboard | Today's follow-ups and demos, new / unassigned / cold leads, recent activity, this month's deals, pipeline, a Business section (invoiced, collected, outstanding, MRR, subscriptions due, open/overdue tickets), chats, staff |
 | WhatsApp / Email Inbox | Shared inbox; staff see their own contacts |
 | Leads | Pipeline New → Contacted → Demo Scheduled → Demo Done → Requirements → Quotation Sent → Negotiation → Won / Lost; products of interest, users, cloud / on-premise, budget, decision date; timeline and follow-ups; Excel / CSV import and bulk assign |
 | Follow-ups | Overdue / today / upcoming calls, demos, meetings |
@@ -56,7 +56,7 @@ cd frontend && npm run dev
 | Companies | Customer businesses with UAE TRN, industry, size, address; their contacts and leads |
 | Contacts | People at those companies (job title), including everyone who wrote on WhatsApp or email |
 | Products | Price list: licenses, subscriptions, implementation, customization, AMC, training — price in AED, unit, VAT % |
-| Reports | New leads, conversion, deals won / lost, deal value, by status, source and agent |
+| Reports | Three tabs over any period: Leads & Conversion (new leads, win rate, deal value, by status / source / agent); Revenue (quotations sent/accepted, invoiced, collected, outstanding, MRR/ARR, invoiced-vs-collected chart, top products); Support (opened/resolved tickets, SLA compliance, avg. resolution and first-response time, by category/type/agent) |
 
 **WhatsApp bot:** a new number is asked for name → email → company → which solution (a numbered list of the
 product categories) → number of users, and becomes an unassigned lead. **Email:** a new sender becomes an
