@@ -33,6 +33,8 @@ public interface ILeadRepository
     Task AddActivityAsync(int companyId, int leadId, AddActivityDto dto, int userId);
     Task<bool> HasOpenLeadAsync(int companyId, int customerId);
     Task UpdateFromBotAsync(int leadId, int? productId, int? usersCount, string? requirements);
+    // System entries on the timeline, e.g. QUOTE (quotation drafted / sent / accepted).
+    Task LogActivityAsync(int companyId, int leadId, string activityType, string body, int? userId);
 }
 
 public class LeadRepository : ILeadRepository
@@ -259,6 +261,16 @@ public class LeadRepository : ILeadRepository
             SELECT COUNT(*) FROM dbo.wsm_leads
             WHERE company_id = @companyId AND customer_id = @customerId AND status NOT IN ('WON', 'NOT_INTERESTED', 'LOST')",
             new { companyId, customerId }) > 0;
+    }
+
+    public async Task LogActivityAsync(int companyId, int leadId, string activityType, string body, int? userId)
+    {
+        using var db = _factory.CreateConnection();
+        await db.ExecuteAsync(@"
+            INSERT INTO dbo.wsm_lead_activities (company_id, lead_id, activity_type, body, created_by)
+            VALUES (@companyId, @leadId, @activityType, @body, @userId);
+            UPDATE dbo.wsm_leads SET updated_at = SYSUTCDATETIME() WHERE lead_id = @leadId;",
+            new { companyId, leadId, activityType, body, userId });
     }
 
     public async Task UpdateFromBotAsync(int leadId, int? productId, int? usersCount, string? requirements)

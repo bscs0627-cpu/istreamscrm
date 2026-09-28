@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate, NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, MessagesSquare, Contact, Users, NotebookPen, MessageCircle, ShieldAlert, LogOut, Mail, AtSign,
-  Building2, Package, Target, CalendarClock, BarChart3,
+  Building2, Package, Target, CalendarClock, BarChart3, FileText, Landmark,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import LoginPage from "@/pages/Auth/LoginPage";
@@ -16,6 +16,9 @@ import EmailSettingsPage from "@/pages/EmailSettings/EmailSettingsPage";
 import SuperAdminPage from "@/pages/SuperAdmin/SuperAdminPage";
 import AccountsPage from "@/pages/Accounts/AccountsPage";
 import ProductsPage from "@/pages/Products/ProductsPage";
+import QuotationsPage from "@/pages/Quotations/QuotationsPage";
+import QuotationEditorPage from "@/pages/Quotations/QuotationEditorPage";
+import CompanyProfilePage from "@/pages/CompanyProfile/CompanyProfilePage";
 import LeadsPage from "@/pages/Leads/LeadsPage";
 import LeadDetailPage from "@/pages/Leads/LeadDetailPage";
 import ImportLeadsPage from "@/pages/Leads/ImportLeadsPage";
@@ -29,6 +32,7 @@ const NAV = [
   { to: "/email-inbox", label: "Email Inbox", icon: Mail, access: "all" },
   { to: "/leads", label: "Leads", icon: Target, access: "all" },
   { to: "/follow-ups", label: "Follow-ups", icon: CalendarClock, access: "all" },
+  { to: "/quotations", label: "Quotations", icon: FileText, access: "all" },
   { to: "/accounts", label: "Companies", icon: Building2, access: "all" },
   { to: "/customers", label: "Contacts", icon: Contact, access: "all" },
   { to: "/products", label: "Products", icon: Package, access: "all" },
@@ -37,6 +41,7 @@ const NAV = [
   { to: "/notes", label: "Notes", icon: NotebookPen, access: "all" },
   { to: "/whatsapp-settings", label: "WhatsApp Settings", icon: MessageCircle, access: "admin" },
   { to: "/email-settings", label: "Email Settings", icon: AtSign, access: "admin" },
+  { to: "/company-profile", label: "Company Profile", icon: Landmark, access: "admin" },
   { to: "/superadmin", label: "Super Admin", icon: ShieldAlert, access: "super" },
 ];
 
@@ -145,6 +150,9 @@ export default function App() {
       <Route path="/follow-ups" element={page(<FollowUpsPage />)} />
       <Route path="/accounts" element={page(<AccountsPage />)} />
       <Route path="/products" element={page(<ProductsPage />)} />
+      <Route path="/quotations" element={page(<QuotationsPage />)} />
+      <Route path="/quotations/:id" element={page(<QuotationEditorPage />)} />
+      <Route path="/company-profile" element={page(<CompanyProfilePage />, "admin")} />
       <Route path="/reports" element={page(<ReportsPage />)} />
       <Route path="/staff" element={page(<StaffPage />, "admin")} />
       <Route path="/notes" element={page(<NotesPage />)} />

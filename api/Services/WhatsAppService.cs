@@ -15,6 +15,8 @@ public interface IWhatsAppService
     bool IsValidSignature(WhatsAppSettings settings, string body, string? signatureHeader);
     Task HandleWebhookAsync(WhatsAppSettings settings, string body);
     Task<(bool Ok, string? Error)> SendFromStaffAsync(WhatsAppSettings settings, CustomerRow customer, string text, int staffId);
+    Task<(bool Ok, string? Error)> SendDocumentAsync(WhatsAppSettings settings, CustomerRow customer, byte[] data, string fileName,
+        string contentType, string? caption, int staffId);
 }
 
 public class WhatsAppService : IWhatsAppService
@@ -260,6 +262,39 @@ public class WhatsAppService : IWhatsAppService
         var (ok, waId, error) = await SendTextAsync(s, customer.MobileNo!, text);
         await _inbox.AddOutboundAsync(s.CompanyId, customer.CustomerId, waId, text, ok, error, staffId, isBot: false);
         return (ok, error);
+    }
+
+    // A file goes to Meta first (media upload), then out as a document message referencing the returned media id.
+    public async Task<(bool, string?)> SendDocumentAsync(WhatsAppSettings s, CustomerRow customer, byte[] data, string fileName,
+        string contentType, string? caption, int staffId)
+    {
+        string? mediaId = null, error = null;
+        using (var form = new MultipartFormDataContent())
+        {
+            form.Add(new StringContent("whatsapp"), "messaging_product");
+            form.Add(new StringContent(contentType), "type");
+            var file = new ByteArrayContent(data);
+            file.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+            form.Add(file, "file", fileName);
+            using var req = new HttpRequestMessage(HttpMethod.Post, $"{_graphBase}/{Uri.EscapeDataString(s.PhoneNumberId!)}/media") { Content = form };
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", s.AccessToken);
+            using var res = await _http.SendAsync(req);
+            var json = await res.Content.ReadAsStringAsync();
+            var root = Parse(json);
+            if (res.IsSuccessStatusCode && root.ValueKind == JsonValueKind.Object && root.TryGetProperty("id", out var id)) mediaId = id.GetString();
+            else
+            {
+                _logger.LogError("WhatsApp media upload failed: {Status} {Body}", (int)res.StatusCode, json);
+                error = ErrorMessage(root) ?? res.ReasonPhrase ?? "Upload failed.";
+            }
+        }
+
+        var (ok, waId, sendError) = mediaId is null
+            ? (false, (string?)null, error)
+            : await SendAsync(s, customer.MobileNo!, new { type = "document", document = new { id = mediaId, filename = fileName, caption } });
+        var logText = string.IsNullOrWhiteSpace(caption) ? $"[Document: {fileName}]" : $"{caption}\n[Document: {fileName}]";
+        await _inbox.AddOutboundAsync(s.CompanyId, customer.CustomerId, waId, logText, ok, sendError, staffId, isBot: false);
+        return (ok, sendError);
     }
 
     private async Task BotReplyAsync(WhatsAppSettings s, CustomerRow customer, string text)

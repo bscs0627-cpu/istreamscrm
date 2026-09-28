@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   LayoutDashboard, RefreshCw, Users, UserPlus, Inbox, MailWarning, MessageSquare, Clock, CalendarClock, AlarmClock,
-  Target, Snowflake, CheckCircle2, Banknote, Presentation, Sparkles, ArrowRightLeft, Phone, ArrowRight, Bot,
+  Target, Snowflake, CheckCircle2, Banknote, Presentation, FileText, Sparkles, ArrowRightLeft, Phone, ArrowRight, Bot,
 } from "lucide-react";
 import { DashboardService } from "@/ServiceLayer/WhatsAppService/WhatsAppService";
 import { FollowUpService } from "@/ServiceLayer/LeadService/LeadService";
@@ -56,13 +56,14 @@ function activityText(a) {
     case "CREATED": return a.byName ? "New lead added" : `New lead from ${labelOf(LEAD_SOURCES, a.leadSource)}`;
     case "STATUS": return a.statusTo === "WON" ? "Deal won" : `Status → ${labelOf(LEAD_STATUSES, a.statusTo)}`;
     case "DEMO": return "Demo done";
+    case "QUOTE": return a.body ?? "Quotation";
     case "MEETING": return "Meeting logged";
     case "CALL": return "Call logged";
     default: return a.activityType;
   }
 }
 
-const ACTIVITY_ICON = { CREATED: Sparkles, STATUS: ArrowRightLeft, DEMO: Presentation, MEETING: Users, CALL: Phone };
+const ACTIVITY_ICON = { CREATED: Sparkles, STATUS: ArrowRightLeft, DEMO: Presentation, MEETING: Users, CALL: Phone, QUOTE: FileText };
 
 export default function DashboardPage() {
   const { isAdmin, user, refreshUnread } = useAuth();

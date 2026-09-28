@@ -83,6 +83,11 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ILeadRepository, LeadRepository>();
 builder.Services.AddScoped<IFollowUpRepository, FollowUpRepository>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
+builder.Services.AddScoped<ICompanyProfileRepository, CompanyProfileRepository>();
+builder.Services.AddScoped<IQuotationRepository, QuotationRepository>();
+
+// QuestPDF: free Community licence (companies under USD 1M annual revenue); larger companies need a paid licence.
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
                      ?? new[] { "http://localhost:5098" };

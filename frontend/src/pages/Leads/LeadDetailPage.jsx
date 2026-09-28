@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Target, Pencil, Trash2, MessagesSquare, Mail, Phone, CalendarClock, CheckCircle2, Plus, X, StickyNote, Users,
-  Presentation, ArrowRightLeft, UserCheck, Sparkles, Bot,
+  Presentation, ArrowRightLeft, UserCheck, Sparkles, Bot, FileText,
 } from "lucide-react";
 import { LeadService, FollowUpService } from "@/ServiceLayer/LeadService/LeadService";
 import { StaffService } from "@/ServiceLayer/AuthService/AuthService";
@@ -15,6 +15,7 @@ import {
   LEAD_STATUSES, LEAD_SOURCES, LOST_REASONS, FOLLOW_UP_TYPES, CALL_OUTCOMES, DEPLOYMENTS, labelOf, formatAed, requirementSummary,
 } from "@/lib/crm";
 import LeadForm from "./LeadForm";
+import LeadQuotations from "./LeadQuotations";
 import { statusOf, priorityOf } from "./LeadsPage";
 
 const card = "bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm";
@@ -37,6 +38,7 @@ function Info({ label, value }) {
 
 const ACTIVITY_ICON = {
   NOTE: StickyNote, CALL: Phone, MEETING: Users, DEMO: Presentation, STATUS: ArrowRightLeft, ASSIGN: UserCheck, CREATED: Sparkles,
+  QUOTE: FileText,
 };
 
 function TimelineItem({ t }) {
@@ -63,7 +65,7 @@ function TimelineItem({ t }) {
 
   const Icon = ACTIVITY_ICON[t.activityType] ?? StickyNote;
   const title = {
-    NOTE: "Note", CALL: `Call${t.outcome ? ` – ${labelOf(CALL_OUTCOMES, t.outcome)}` : ""}`, MEETING: "Meeting", DEMO: "Demo",
+    NOTE: "Note", CALL: `Call${t.outcome ? ` – ${labelOf(CALL_OUTCOMES, t.outcome)}` : ""}`, MEETING: "Meeting", DEMO: "Demo", QUOTE: "Quotation",
     CREATED: t.byName ? "Lead created" : "Lead created automatically",
     ASSIGN: `Assigned to ${t.body}`,
     STATUS: `Status: ${t.statusFrom ? `${statusOf(t.statusFrom).label} → ` : ""}${statusOf(t.statusTo).label}`,
@@ -308,6 +310,8 @@ export default function LeadDetailPage() {
         </div>
 
         <div className="space-y-4 min-w-0">
+          <LeadQuotations lead={lead} onError={setError} />
+
           <div className={`${card} p-4`}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Follow-ups</h3>

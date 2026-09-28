@@ -17,8 +17,11 @@ public interface IMailboxService
 {
     Task<(bool Ok, string? Error)> VerifyAsync(EmailSettings settings);
     Task<int> FetchNewAsync(EmailSettings settings, CancellationToken ct = default);
-    Task<(bool Ok, string? Error)> SendAsync(EmailSettings settings, CustomerRow customer, string subject, string body, int staffId);
+    Task<(bool Ok, string? Error)> SendAsync(EmailSettings settings, CustomerRow customer, string subject, string body, int staffId,
+        MailAttachment? attachment = null);
 }
+
+public record MailAttachment(byte[] Data, string FileName, string ContentType);
 
 // One company mailbox: IMAP brings customer emails in, SMTP sends staff replies out.
 public class MailboxService : IMailboxService
@@ -189,14 +192,17 @@ public class MailboxService : IMailboxService
         return Regex.Replace(text, @"\n{3,}", "\n\n").Trim();
     }
 
-    public async Task<(bool, string?)> SendAsync(EmailSettings s, CustomerRow customer, string subject, string body, int staffId)
+    public async Task<(bool, string?)> SendAsync(EmailSettings s, CustomerRow customer, string subject, string body, int staffId,
+        MailAttachment? attachment = null)
     {
         var message = new MimeMessage();
         message.From.Add(new MailboxAddress(s.FromName ?? s.EmailAddress, s.EmailAddress));
         message.To.Add(new MailboxAddress(customer.CustomerName ?? customer.Email, customer.Email));
         message.Subject = subject;
         message.MessageId = MimeUtils.GenerateMessageId(s.EmailAddress.Split('@').Last());
-        message.Body = new TextPart(TextFormat.Plain) { Text = body };
+        var builder = new BodyBuilder { TextBody = body };
+        if (attachment is not null) builder.Attachments.Add(attachment.FileName, attachment.Data, ContentType.Parse(attachment.ContentType));
+        message.Body = builder.ToMessageBody();
 
         // Thread the reply under the customer's latest email in their mail app.
         var lastIn = (await _emails.GetEmailsAsync(s.CompanyId, customer.CustomerId))
@@ -221,7 +227,7 @@ public class MailboxService : IMailboxService
         }
 
         await _emails.AddOutboundAsync(s.CompanyId, customer.CustomerId, message.MessageId, subject,
-            s.EmailAddress, customer.Email!, body, error is null, error, staffId);
+            s.EmailAddress, customer.Email!, attachment is null ? body : $"{body}\n\n[Attachment: {attachment.FileName}]", error is null, error, staffId);
         return (error is null, error);
     }
 }

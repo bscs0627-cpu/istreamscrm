@@ -18,6 +18,7 @@ The ports differ from the real-estate CRM (5097 / 5098), so both can run on one 
    sqlcmd -I -S "(localdb)\MSSQLLocalDB" -i database/02_email_inbox.sql
    sqlcmd -I -S "(localdb)\MSSQLLocalDB" -i database/03_products.sql
    sqlcmd -I -S "(localdb)\MSSQLLocalDB" -i database/04_leads.sql
+   sqlcmd -I -S "(localdb)\MSSQLLocalDB" -i database/05_quotations.sql
    ```
 2. Create `api/appsettings.Development.json` (not committed):
    ```json
@@ -43,6 +44,8 @@ cd frontend && npm run dev
 | WhatsApp / Email Inbox | Shared inbox; staff see their own contacts |
 | Leads | Pipeline New → Contacted → Demo Scheduled → Demo Done → Requirements → Quotation Sent → Negotiation → Won / Lost; products of interest, users, cloud / on-premise, budget, decision date; timeline and follow-ups; Excel / CSV import and bulk assign |
 | Follow-ups | Overdue / today / upcoming calls, demos, meetings |
+| Quotations | QT-2026-0001 from a lead's products (quantity = users for per-user prices); discount and 5% VAT per line; revisions R1, R2…; admin approval above the discount limit; PDF with your logo, bank details and terms; send by email (attached) or WhatsApp (document); Accepted wins the lead at the value before VAT |
+| Company Profile | Your legal name, TRN, address, bank, logo, quotation validity, discount limit and default terms (admins) |
 | Companies | Customer businesses with UAE TRN, industry, size, address; their contacts and leads |
 | Contacts | People at those companies (job title), including everyone who wrote on WhatsApp or email |
 | Products | Price list: licenses, subscriptions, implementation, customization, AMC, training — price in AED, unit, VAT % |
@@ -51,6 +54,9 @@ cd frontend && npm run dev
 **WhatsApp bot:** a new number is asked for name → email → company → which solution (a numbered list of the
 product categories) → number of users, and becomes an unassigned lead. **Email:** a new sender becomes an
 unassigned lead titled with the email subject.
+
+PDFs are made with [QuestPDF](https://www.questpdf.com) under its free Community licence (companies below USD 1M
+annual revenue); above that a paid QuestPDF licence is required.
 
 ## Roles
 
@@ -77,5 +83,5 @@ New sign-ups create a company in **Pending** status; a Super Admin approves it b
 
 ## Roadmap
 
-Quotations (PDF, revisions, send by email / WhatsApp) → invoices and payments (UAE tax invoice) →
+Invoices and payments (UAE tax invoice) →
 subscriptions and renewals → support tickets and change requests → dashboard and reports for all of it.

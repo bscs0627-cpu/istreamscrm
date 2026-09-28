@@ -103,7 +103,33 @@ export const INDUSTRIES = [
   "Education", "Logistics", "Real Estate", "Automotive", "Oil & Gas", "Professional Services", "IT", "Government", "Other",
 ];
 
-export const labelOf = (list, value) => list.find((x) => x.value === value)?.label ?? value ?? "";
+export const QUOTE_STATUSES = [
+  { value: "DRAFT", label: "Draft", cls: "bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-gray-300" },
+  { value: "SENT", label: "Sent", cls: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
+  { value: "ACCEPTED", label: "Accepted", cls: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
+  { value: "REJECTED", label: "Rejected", cls: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
+  { value: "REVISED", label: "Revised", cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
+];
+
+export const quoteStatusOf = (s) => QUOTE_STATUSES.find((x) => x.value === s) ?? QUOTE_STATUSES[0];
+
+// Same rounding as the API: per line, 2 decimals.
+const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+export function quoteLine(l) {
+  const gross = round2(round2(Number(l.quantity) || 0) * round2(Number(l.unitPrice) || 0));
+  const discount = round2(gross * round2(Number(l.discountPct) || 0) / 100);
+  const net = round2(gross - discount);
+  const vat = round2(net * round2(Number(l.vatPct) || 0) / 100);
+  return { gross, discount, net, vat };
+}
+export function quoteTotals(lines) {
+  return lines.reduce((t, l) => {
+    const m = quoteLine(l);
+    return { subtotal: round2(t.subtotal + m.gross), discount: round2(t.discount + m.discount), vat: round2(t.vat + m.vat), total: round2(t.total + m.net + m.vat) };
+  }, { subtotal: 0, discount: 0, vat: 0, total: 0 });
+}
+
+export const labelOf =(list, value) => list.find((x) => x.value === value)?.label ?? value ?? "";
 
 const aed = new Intl.NumberFormat("en-AE", { maximumFractionDigits: 2 });
 export const formatAed = (n) => (n === null || n === undefined || n === "" ? "" : `AED ${aed.format(n)}`);
