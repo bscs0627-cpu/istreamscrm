@@ -19,6 +19,7 @@ The ports differ from the real-estate CRM (5097 / 5098), so both can run on one 
    sqlcmd -I -S "(localdb)\MSSQLLocalDB" -i database/03_products.sql
    sqlcmd -I -S "(localdb)\MSSQLLocalDB" -i database/04_leads.sql
    sqlcmd -I -S "(localdb)\MSSQLLocalDB" -i database/05_quotations.sql
+   sqlcmd -I -S "(localdb)\MSSQLLocalDB" -i database/06_invoices.sql
    ```
 2. Create `api/appsettings.Development.json` (not committed):
    ```json
@@ -45,7 +46,9 @@ cd frontend && npm run dev
 | Leads | Pipeline New → Contacted → Demo Scheduled → Demo Done → Requirements → Quotation Sent → Negotiation → Won / Lost; products of interest, users, cloud / on-premise, budget, decision date; timeline and follow-ups; Excel / CSV import and bulk assign |
 | Follow-ups | Overdue / today / upcoming calls, demos, meetings |
 | Quotations | QT-2026-0001 from a lead's products (quantity = users for per-user prices); discount and 5% VAT per line; revisions R1, R2…; admin approval above the discount limit; PDF with your logo, bank details and terms; send by email (attached) or WhatsApp (document); Accepted wins the lead at the value before VAT |
-| Company Profile | Your legal name, TRN, address, bank, logo, quotation validity, discount limit and default terms (admins) |
+| Invoices | UAE tax invoices from an accepted quotation: full, or a share such as a 50% advance and the balance; the INV-2026-0001 number is given only on **Issue** (drafts leave no gap) and the buyer's name / TRN / address are frozen then; issued invoices are cancelled, never edited; PDF by email / WhatsApp, payment reminders; payments by bank transfer, cheque, cash, card (admins) |
+| Receivables | Outstanding balances by customer: not yet due, 1–30, 31–60, 61–90, 90+ days overdue |
+| Company Profile | Your legal name, TRN, address, bank, logo, quotation validity, discount limit and default quotation and invoice terms, invoice due days (admins) |
 | Companies | Customer businesses with UAE TRN, industry, size, address; their contacts and leads |
 | Contacts | People at those companies (job title), including everyone who wrote on WhatsApp or email |
 | Products | Price list: licenses, subscriptions, implementation, customization, AMC, training — price in AED, unit, VAT % |
@@ -83,5 +86,4 @@ New sign-ups create a company in **Pending** status; a Super Admin approves it b
 
 ## Roadmap
 
-Invoices and payments (UAE tax invoice) →
-subscriptions and renewals → support tickets and change requests → dashboard and reports for all of it.
+Subscriptions and renewals → support tickets and change requests → dashboard and reports for all of it.

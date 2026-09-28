@@ -10,6 +10,7 @@ import { Alerts, Breadcrumb, DeleteModal, inputCls, labelCls } from "@/component
 import { apiError } from "@/lib/apiClient";
 import { formatDate, toInputDate } from "@/lib/utils";
 import { dateTime, displayName } from "@/lib/time";
+import QuoteInvoices from "./QuoteInvoices";
 import { UNITS, labelOf, formatAed, formatNumber, quoteLine, quoteTotals, quoteStatusOf } from "@/lib/crm";
 
 const card = "bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm";
@@ -254,6 +255,8 @@ export default function QuotationEditorPage() {
           </div>
         </form>
       )}
+
+      {q.status === "ACCEPTED" && <QuoteInvoices quote={q} onError={setError} />}
 
       <div className={`${card} p-5 space-y-5`}>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

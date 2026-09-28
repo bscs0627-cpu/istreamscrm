@@ -111,7 +111,26 @@ export const QUOTE_STATUSES = [
   { value: "REVISED", label: "Revised", cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
 ];
 
-export const quoteStatusOf = (s) => QUOTE_STATUSES.find((x) => x.value === s) ?? QUOTE_STATUSES[0];
+// An issued invoice is shown by its payment state; drafts and cancelled ones by their status.
+export const INVOICE_STATES = [
+  { value: "DRAFT", label: "Draft", cls: "bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-gray-300" },
+  { value: "UNPAID", label: "Unpaid", cls: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
+  { value: "PARTIAL", label: "Partly paid", cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
+  { value: "OVERDUE", label: "Overdue", cls: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
+  { value: "PAID", label: "Paid", cls: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
+  { value: "CANCELLED", label: "Cancelled", cls: "bg-gray-200 text-gray-500 line-through dark:bg-slate-700 dark:text-gray-400" },
+];
+export const invoiceStateOf = (i) => INVOICE_STATES.find((x) => x.value === i.paymentStatus) ?? INVOICE_STATES[0];
+
+export const PAYMENT_METHODS = [
+  { value: "BANK_TRANSFER", label: "Bank transfer" },
+  { value: "CHEQUE", label: "Cheque" },
+  { value: "CASH", label: "Cash" },
+  { value: "CARD", label: "Card" },
+  { value: "ONLINE", label: "Online payment" },
+];
+
+export const quoteStatusOf =(s) => QUOTE_STATUSES.find((x) => x.value === s) ?? QUOTE_STATUSES[0];
 
 // Same rounding as the API: per line, 2 decimals.
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;

@@ -29,7 +29,7 @@ public class CompanyProfileController : ControllerBase
         dto.BankName = Blank(dto.BankName); dto.BankAccountName = Blank(dto.BankAccountName);
         dto.BankAccountNo = Blank(dto.BankAccountNo); dto.Iban = Blank(dto.Iban)?.Replace(" ", "").ToUpperInvariant();
         dto.Swift = Blank(dto.Swift)?.ToUpperInvariant(); dto.QuotePaymentTerms = Blank(dto.QuotePaymentTerms);
-        dto.QuoteTerms = Blank(dto.QuoteTerms);
+        dto.QuoteTerms = Blank(dto.QuoteTerms); dto.InvoiceTerms = Blank(dto.InvoiceTerms);
         await _repo.SaveAsync(User.CompanyId(), dto);
         return Ok(await _repo.GetAsync(User.CompanyId()));
     }

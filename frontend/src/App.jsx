@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate, NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, MessagesSquare, Contact, Users, NotebookPen, MessageCircle, ShieldAlert, LogOut, Mail, AtSign,
-  Building2, Package, Target, CalendarClock, BarChart3, FileText, Landmark,
+  Building2, Package, Target, CalendarClock, BarChart3, FileText, Landmark, Receipt, Wallet,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import LoginPage from "@/pages/Auth/LoginPage";
@@ -19,6 +19,9 @@ import ProductsPage from "@/pages/Products/ProductsPage";
 import QuotationsPage from "@/pages/Quotations/QuotationsPage";
 import QuotationEditorPage from "@/pages/Quotations/QuotationEditorPage";
 import CompanyProfilePage from "@/pages/CompanyProfile/CompanyProfilePage";
+import InvoicesPage from "@/pages/Invoices/InvoicesPage";
+import InvoiceEditorPage from "@/pages/Invoices/InvoiceEditorPage";
+import ReceivablesPage from "@/pages/Receivables/ReceivablesPage";
 import LeadsPage from "@/pages/Leads/LeadsPage";
 import LeadDetailPage from "@/pages/Leads/LeadDetailPage";
 import ImportLeadsPage from "@/pages/Leads/ImportLeadsPage";
@@ -33,6 +36,8 @@ const NAV = [
   { to: "/leads", label: "Leads", icon: Target, access: "all" },
   { to: "/follow-ups", label: "Follow-ups", icon: CalendarClock, access: "all" },
   { to: "/quotations", label: "Quotations", icon: FileText, access: "all" },
+  { to: "/invoices", label: "Invoices", icon: Receipt, access: "all" },
+  { to: "/receivables", label: "Receivables", icon: Wallet, access: "all" },
   { to: "/accounts", label: "Companies", icon: Building2, access: "all" },
   { to: "/customers", label: "Contacts", icon: Contact, access: "all" },
   { to: "/products", label: "Products", icon: Package, access: "all" },
@@ -152,6 +157,9 @@ export default function App() {
       <Route path="/products" element={page(<ProductsPage />)} />
       <Route path="/quotations" element={page(<QuotationsPage />)} />
       <Route path="/quotations/:id" element={page(<QuotationEditorPage />)} />
+      <Route path="/invoices" element={page(<InvoicesPage />)} />
+      <Route path="/invoices/:id" element={page(<InvoiceEditorPage />)} />
+      <Route path="/receivables" element={page(<ReceivablesPage />)} />
       <Route path="/company-profile" element={page(<CompanyProfilePage />, "admin")} />
       <Route path="/reports" element={page(<ReportsPage />)} />
       <Route path="/staff" element={page(<StaffPage />, "admin")} />

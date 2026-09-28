@@ -24,7 +24,7 @@ public class CompanyProfileRepository : ICompanyProfileRepository
         var row = await db.QuerySingleOrDefaultAsync<CompanyProfile>(@"
             SELECT company_id, legal_name, trn, address, phone, email, website, bank_name, bank_account_name, bank_account_no,
                    iban, swift, CASE WHEN logo IS NULL THEN 'F' ELSE 'T' END AS has_logo, quote_validity_days, max_discount_pct,
-                   quote_payment_terms, quote_terms, updated_at
+                   quote_payment_terms, quote_terms, invoice_due_days, invoice_terms, updated_at
             FROM dbo.wsm_company_profile WHERE company_id = @companyId", new { companyId });
         if (row is not null) return row;
         var name = await db.ExecuteScalarAsync<string>("SELECT company_name FROM dbo.wsm_companies WHERE company_id = @companyId", new { companyId });
@@ -43,7 +43,8 @@ public class CompanyProfileRepository : ICompanyProfileRepository
             SET legal_name = @LegalName, trn = @Trn, address = @Address, phone = @Phone, email = @Email, website = @Website,
                 bank_name = @BankName, bank_account_name = @BankAccountName, bank_account_no = @BankAccountNo, iban = @Iban,
                 swift = @Swift, quote_validity_days = @QuoteValidityDays, max_discount_pct = @MaxDiscountPct,
-                quote_payment_terms = @QuotePaymentTerms, quote_terms = @QuoteTerms, updated_at = SYSUTCDATETIME()
+                quote_payment_terms = @QuotePaymentTerms, quote_terms = @QuoteTerms, invoice_due_days = @InvoiceDueDays,
+                invoice_terms = @InvoiceTerms, updated_at = SYSUTCDATETIME()
             WHERE company_id = @companyId", p);
     }
 

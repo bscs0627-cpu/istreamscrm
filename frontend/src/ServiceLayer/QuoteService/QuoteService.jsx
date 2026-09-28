@@ -25,10 +25,31 @@ export const CompanyProfileService = {
   deleteLogo: () => client.delete("/company-profile/logo").then((r) => r.data),
 };
 
-// Opens the PDF in a new tab (the API needs the sign-in token, so a plain link would not work).
-export async function openQuotationPdf(id) {
-  const blob = await QuotationService.pdf(id);
+const tz = () => ({ tzOffset: new Date().getTimezoneOffset() });
+
+export const InvoiceService = {
+  getAll: (params) => client.get("/invoices", { params: { ...params, ...tz() } }).then((r) => r.data),
+  get: (id) => client.get(`/invoices/${id}`, { params: tz() }).then((r) => r.data),
+  aging: () => client.get("/invoices/aging", { params: tz() }).then((r) => r.data),
+  remaining: (quotationId) => client.get(`/invoices/remaining/${quotationId}`).then((r) => r.data),
+  fromQuotation: (quotationId, payload) => client.post(`/invoices/from-quotation/${quotationId}`, payload, { params: tz() }).then((r) => r.data),
+  update: (id, payload) => client.put(`/invoices/${id}`, payload, { params: tz() }).then((r) => r.data),
+  remove: (id) => client.delete(`/invoices/${id}`, { params: tz() }).then((r) => r.data),
+  issue: (id) => client.post(`/invoices/${id}/issue`, null, { params: tz() }).then((r) => r.data),
+  cancel: (id, reason) => client.post(`/invoices/${id}/cancel`, { reason }, { params: tz() }).then((r) => r.data),
+  send: (id, payload) => client.post(`/invoices/${id}/send`, payload, { params: tz() }).then((r) => r.data),
+  addPayment: (id, payload) => client.post(`/invoices/${id}/payments`, payload, { params: tz() }).then((r) => r.data),
+  deletePayment: (paymentId) => client.delete(`/invoices/payments/${paymentId}`, { params: tz() }).then((r) => r.data),
+  pdf: (id) => client.get(`/invoices/${id}/pdf`, { params: tz(), responseType: "blob" }).then((r) => r.data),
+};
+
+// Opens a PDF in a new tab (the API needs the sign-in token, so a plain link would not work).
+async function openPdf(load) {
+  const blob = await load();
   const url = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
   window.open(url, "_blank");
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
+
+export const openQuotationPdf = (id) => openPdf(() => QuotationService.pdf(id));
+export const openInvoicePdf = (id) => openPdf(() => InvoiceService.pdf(id));

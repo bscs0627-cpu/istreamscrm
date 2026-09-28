@@ -23,6 +23,8 @@ public class CompanyProfile
     public decimal MaxDiscountPct { get; set; } = 10;
     public string? QuotePaymentTerms { get; set; }
     public string? QuoteTerms { get; set; }
+    public int InvoiceDueDays { get; set; } = 30;
+    public string? InvoiceTerms { get; set; }
     public DateTime? UpdatedAt { get; set; }
 }
 
@@ -43,6 +45,8 @@ public class SaveCompanyProfileDto
     [Range(0, 100)] public decimal MaxDiscountPct { get; set; } = 10;
     [MaxLength(1000)] public string? QuotePaymentTerms { get; set; }
     [MaxLength(20000)] public string? QuoteTerms { get; set; }
+    [Range(0, 365)] public int InvoiceDueDays { get; set; } = 30;
+    [MaxLength(20000)] public string? InvoiceTerms { get; set; }
 }
 
 // ---------- Quotations ----------

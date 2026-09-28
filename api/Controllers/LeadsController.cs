@@ -16,10 +16,12 @@ public class LeadsController : ControllerBase
     private readonly IFollowUpRepository _followUps;
     private readonly IAccountRepository _accounts;
     private readonly IProductRepository _products;
+    private readonly IInvoiceRepository _invoices;
 
     public LeadsController(ILeadRepository repo, ICustomerRepository customers, IUserRepository users,
-        IFollowUpRepository followUps, IAccountRepository accounts, IProductRepository products)
+        IFollowUpRepository followUps, IAccountRepository accounts, IProductRepository products, IInvoiceRepository invoices)
     {
+        _invoices = invoices;
         _repo = repo;
         _customers = customers;
         _users = users;
@@ -107,7 +109,12 @@ public class LeadsController : ControllerBase
     [HttpDelete("{id:int}")]
     [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Delete(int id)
-        => await _repo.DeleteAsync(User.CompanyId(), id) ? NoContent() : NotFound();
+    {
+        // Issued tax invoices must be kept, so their lead stays too.
+        if (await _invoices.IssuedCountForLeadsAsync(User.CompanyId(), "l.lead_id = @id", new { id }) > 0)
+            return Conflict(new { message = "This lead has issued invoices, which must be kept. Mark the lead Lost instead." });
+        return await _repo.DeleteAsync(User.CompanyId(), id) ? NoContent() : NotFound();
+    }
 
     [HttpGet("{id:int}/timeline")]
     public async Task<IActionResult> Timeline(int id)

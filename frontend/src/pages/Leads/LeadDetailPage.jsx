@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Target, Pencil, Trash2, MessagesSquare, Mail, Phone, CalendarClock, CheckCircle2, Plus, X, StickyNote, Users,
-  Presentation, ArrowRightLeft, UserCheck, Sparkles, Bot, FileText,
+  Presentation, ArrowRightLeft, UserCheck, Sparkles, Bot, FileText, Receipt,
 } from "lucide-react";
 import { LeadService, FollowUpService } from "@/ServiceLayer/LeadService/LeadService";
 import { StaffService } from "@/ServiceLayer/AuthService/AuthService";
@@ -38,7 +38,7 @@ function Info({ label, value }) {
 
 const ACTIVITY_ICON = {
   NOTE: StickyNote, CALL: Phone, MEETING: Users, DEMO: Presentation, STATUS: ArrowRightLeft, ASSIGN: UserCheck, CREATED: Sparkles,
-  QUOTE: FileText,
+  QUOTE: FileText, INVOICE: Receipt,
 };
 
 function TimelineItem({ t }) {
@@ -65,7 +65,7 @@ function TimelineItem({ t }) {
 
   const Icon = ACTIVITY_ICON[t.activityType] ?? StickyNote;
   const title = {
-    NOTE: "Note", CALL: `Call${t.outcome ? ` – ${labelOf(CALL_OUTCOMES, t.outcome)}` : ""}`, MEETING: "Meeting", DEMO: "Demo", QUOTE: "Quotation",
+    NOTE: "Note", CALL: `Call${t.outcome ? ` – ${labelOf(CALL_OUTCOMES, t.outcome)}` : ""}`, MEETING: "Meeting", DEMO: "Demo", QUOTE: "Quotation", INVOICE: "Invoice",
     CREATED: t.byName ? "Lead created" : "Lead created automatically",
     ASSIGN: `Assigned to ${t.body}`,
     STATUS: `Status: ${t.statusFrom ? `${statusOf(t.statusFrom).label} → ` : ""}${statusOf(t.statusTo).label}`,

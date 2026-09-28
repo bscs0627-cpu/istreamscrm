@@ -1,19 +1,21 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FileText, Plus, Loader2 } from "lucide-react";
-import { QuotationService } from "@/ServiceLayer/QuoteService/QuoteService";
+import { QuotationService, InvoiceService } from "@/ServiceLayer/QuoteService/QuoteService";
 import { apiError } from "@/lib/apiClient";
 import { formatDate } from "@/lib/utils";
-import { formatAed, quoteStatusOf } from "@/lib/crm";
+import { formatAed, quoteStatusOf, invoiceStateOf } from "@/lib/crm";
 
 // The lead's quotations (latest version of each number first) and a button that drafts one from the lead's products.
 export default function LeadQuotations({ lead, onError }) {
   const navigate = useNavigate();
   const [rows, setRows] = useState([]);
+  const [invoices, setInvoices] = useState([]);
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     QuotationService.getAll({ leadId: lead.leadId }).then(setRows).catch(() => onError("Failed to load quotations."));
+    InvoiceService.getAll({ leadId: lead.leadId }).then(setInvoices).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lead.leadId, lead.updatedAt]);
 
@@ -55,6 +57,26 @@ export default function LeadQuotations({ lead, onError }) {
             );
           })}
         </ul>
+      )}
+      {invoices.length > 0 && (
+        <div className="mt-3 border-t border-gray-100 dark:border-slate-800 pt-3">
+          <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Invoices</div>
+          <ul className="space-y-1.5">
+            {invoices.map((i) => {
+              const st = invoiceStateOf(i);
+              return (
+                <li key={i.invoiceId}>
+                  <Link to={`/invoices/${i.invoiceId}`} className="flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 dark:border-slate-700 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-800/50">
+                    <span className="font-mono text-sm font-medium text-blue-600">{i.invoiceNo}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${st.cls}`}>{st.label}</span>
+                    <span className="ml-auto text-sm tabular-nums text-gray-900 dark:text-white">{formatAed(i.grandTotal)}</span>
+                    {i.status === "ISSUED" && i.balance > 0 && <span className="w-full text-xs text-gray-500 dark:text-gray-400">Balance {formatAed(i.balance)} · due {formatDate(i.dueDate)}</span>}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
     </div>
   );

@@ -6,7 +6,7 @@ import { apiError } from "@/lib/apiClient";
 
 const FIELDS = [
   "legalName", "trn", "address", "phone", "email", "website", "bankName", "bankAccountName", "bankAccountNo", "iban", "swift",
-  "quoteValidityDays", "maxDiscountPct", "quotePaymentTerms", "quoteTerms",
+  "quoteValidityDays", "maxDiscountPct", "quotePaymentTerms", "quoteTerms", "invoiceDueDays", "invoiceTerms",
 ];
 
 const SAMPLE_TERMS = `1. Prices are in UAE Dirhams (AED) and exclude VAT unless stated; VAT is charged at 5%.
@@ -68,6 +68,7 @@ export default function CompanyProfilePage() {
     payload.trn = trn || null;
     payload.quoteValidityDays = Number(form.quoteValidityDays || 30);
     payload.maxDiscountPct = Number(form.maxDiscountPct || 0);
+    payload.invoiceDueDays = Number(form.invoiceDueDays || 0);
     try { apply(await CompanyProfileService.save(payload)); setSuccess("Company profile saved."); }
     catch (err) { setError(apiError(err, "Failed to save.")); }
     finally { setSaving(false); }
@@ -154,6 +155,16 @@ export default function CompanyProfilePage() {
             {!form.quoteTerms && (
               <button type="button" onClick={() => setForm((f) => ({ ...f, quoteTerms: SAMPLE_TERMS }))} className="mt-1 text-xs font-medium text-blue-600 hover:underline">Use sample terms</button>
             )}
+          </Field>
+        </Section>
+
+        <Section title="Invoice Defaults">
+          <Field label="Payment Due (days after invoice)">
+            <input type="number" min="0" max="365" value={form.invoiceDueDays} onChange={set("invoiceDueDays")} className={inputCls} />
+          </Field>
+          <Field label="Invoice Terms & Notes (printed on invoices)" span={4}>
+            <textarea value={form.invoiceTerms} onChange={set("invoiceTerms")} rows={4} className={`${inputCls} text-[13px]`}
+              placeholder="e.g. Please quote the invoice number with your payment. Cheques payable to iStreams ERP Solutions LLC." />
           </Field>
         </Section>
 

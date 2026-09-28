@@ -13,9 +13,11 @@ public class CustomersController : ControllerBase
     private readonly ICustomerRepository _repo;
     private readonly IUserRepository _users;
     private readonly IAccountRepository _accounts;
+    private readonly IInvoiceRepository _invoices;
 
-    public CustomersController(ICustomerRepository repo, IUserRepository users, IAccountRepository accounts)
+    public CustomersController(ICustomerRepository repo, IUserRepository users, IAccountRepository accounts, IInvoiceRepository invoices)
     {
+        _invoices = invoices;
         _repo = repo;
         _users = users;
         _accounts = accounts;
@@ -68,7 +70,11 @@ public class CustomersController : ControllerBase
     [HttpDelete("{id:int}")]
     [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> Delete(int id)
-        => await _repo.DeleteAsync(User.CompanyId(), id) ? NoContent() : NotFound();
+    {
+        if (await _invoices.IssuedCountForLeadsAsync(User.CompanyId(), "l.customer_id = @id", new { id }) > 0)
+            return Conflict(new { message = "This contact has issued invoices, which must be kept, so the contact cannot be deleted." });
+        return await _repo.DeleteAsync(User.CompanyId(), id) ? NoContent() : NotFound();
+    }
 
     [HttpPut("{id:int}/assign")]
     [Authorize(Roles = Roles.Admin)]
