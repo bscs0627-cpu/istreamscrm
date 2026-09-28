@@ -24,10 +24,11 @@ public class QuotationsController : ControllerBase
     private readonly ISettingsRepository _whatsAppSettings;
     private readonly IMailboxService _mailbox;
     private readonly IWhatsAppService _whatsApp;
+    private readonly ITicketRepository _tickets;
 
     public QuotationsController(IQuotationRepository repo, ILeadRepository leads, IProductRepository products,
         ICompanyProfileRepository profile, ICustomerRepository customers, IEmailSettingsRepository emailSettings,
-        ISettingsRepository whatsAppSettings, IMailboxService mailbox, IWhatsAppService whatsApp)
+        ISettingsRepository whatsAppSettings, IMailboxService mailbox, IWhatsAppService whatsApp, ITicketRepository tickets)
     {
         _repo = repo;
         _leads = leads;
@@ -38,6 +39,7 @@ public class QuotationsController : ControllerBase
         _whatsAppSettings = whatsAppSettings;
         _mailbox = mailbox;
         _whatsApp = whatsApp;
+        _tickets = tickets;
     }
 
     private int? Scope => User.IsAdmin() ? null : User.UserId();
@@ -231,6 +233,7 @@ public class QuotationsController : ControllerBase
         await _leads.LogActivityAsync(User.CompanyId(), q.LeadId, "QUOTE",
             dto.Accepted ? $"{q.QuoteNo} accepted by the customer" : $"{q.QuoteNo} rejected{(string.IsNullOrWhiteSpace(dto.Reason) ? "" : $": {dto.Reason.Trim()}")}",
             User.UserId());
+        await _tickets.QuotationClosedAsync(User.CompanyId(), q.LeadId, dto.Accepted, q.QuoteNo);
         // An accepted quotation wins the lead at the quotation's value before VAT.
         if (dto.Accepted && q.LeadStatus != "WON")
             await _leads.SetStatusAsync(User.CompanyId(), q.LeadId,

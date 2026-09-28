@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate, NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, MessagesSquare, Contact, Users, NotebookPen, MessageCircle, ShieldAlert, LogOut, Mail, AtSign,
-  Building2, Package, Target, CalendarClock, BarChart3, FileText, Landmark, Receipt, Wallet, Repeat,
+  Building2, Package, Target, CalendarClock, BarChart3, FileText, Landmark, Receipt, Wallet, Repeat, LifeBuoy,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import LoginPage from "@/pages/Auth/LoginPage";
@@ -23,6 +23,8 @@ import InvoicesPage from "@/pages/Invoices/InvoicesPage";
 import InvoiceEditorPage from "@/pages/Invoices/InvoiceEditorPage";
 import ReceivablesPage from "@/pages/Receivables/ReceivablesPage";
 import SubscriptionsPage from "@/pages/Subscriptions/SubscriptionsPage";
+import TicketsPage from "@/pages/Tickets/TicketsPage";
+import TicketDetailPage from "@/pages/Tickets/TicketDetailPage";
 import LeadsPage from "@/pages/Leads/LeadsPage";
 import LeadDetailPage from "@/pages/Leads/LeadDetailPage";
 import ImportLeadsPage from "@/pages/Leads/ImportLeadsPage";
@@ -40,6 +42,7 @@ const NAV = [
   { to: "/invoices", label: "Invoices", icon: Receipt, access: "all" },
   { to: "/receivables", label: "Receivables", icon: Wallet, access: "all" },
   { to: "/subscriptions", label: "Subscriptions", icon: Repeat, access: "all" },
+  { to: "/tickets", label: "Tickets", icon: LifeBuoy, access: "all" },
   { to: "/accounts", label: "Companies", icon: Building2, access: "all" },
   { to: "/customers", label: "Contacts", icon: Contact, access: "all" },
   { to: "/products", label: "Products", icon: Package, access: "all" },
@@ -163,6 +166,8 @@ export default function App() {
       <Route path="/invoices/:id" element={page(<InvoiceEditorPage />)} />
       <Route path="/receivables" element={page(<ReceivablesPage />)} />
       <Route path="/subscriptions" element={page(<SubscriptionsPage />)} />
+      <Route path="/tickets" element={page(<TicketsPage />)} />
+      <Route path="/tickets/:id" element={page(<TicketDetailPage />)} />
       <Route path="/company-profile" element={page(<CompanyProfilePage />, "admin")} />
       <Route path="/reports" element={page(<ReportsPage />)} />
       <Route path="/staff" element={page(<StaffPage />, "admin")} />

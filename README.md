@@ -21,6 +21,7 @@ The ports differ from the real-estate CRM (5097 / 5098), so both can run on one 
    sqlcmd -I -S "(localdb)\MSSQLLocalDB" -i database/05_quotations.sql
    sqlcmd -I -S "(localdb)\MSSQLLocalDB" -i database/06_invoices.sql
    sqlcmd -I -S "(localdb)\MSSQLLocalDB" -i database/07_subscriptions.sql
+   sqlcmd -I -S "(localdb)\MSSQLLocalDB" -i database/08_tickets.sql
    ```
 2. Create `api/appsettings.Development.json` (not committed):
    ```json
@@ -50,6 +51,7 @@ cd frontend && npm run dev
 | Invoices | UAE tax invoices from an accepted quotation: full, or a share such as a 50% advance and the balance; the INV-2026-0001 number is given only on **Issue** (drafts leave no gap) and the buyer's name / TRN / address are frozen then; issued invoices are cancelled, never edited; PDF by email / WhatsApp, payment reminders; payments by bank transfer, cheque, cash, card (admins) |
 | Receivables | Outstanding balances by customer: not yet due, 1–30, 31–60, 61–90, 90+ days overdue |
 | Subscriptions | Cloud plans and AMC contracts made from the recurring lines of an accepted quotation (or added on a lead); monthly / quarterly / yearly; MRR and ARR; due for renewal 7 / 15 / 30 days ahead by cycle; a background job every 6 hours drafts the renewal invoice for auto-renew subscriptions and schedules a call for the agent (nothing is sent to the customer automatically); issuing the renewal invoice moves the paid-up date, cancelling it moves it back; renewal reminders by email / WhatsApp |
+| Tickets | Support issues and change requests (TK-2026-0001) from a contact, the WhatsApp inbox or a lead; priority sets the resolve-by time (urgent 4 h, high 24 h, medium 3 days, low 5 days); staff see their own tickets and the unassigned queue; thread of replies (sent by email / WhatsApp), internal notes and logged customer messages; shows whether the customer has an active subscription / AMC; change requests are estimated in hours and turned into a quotation on a new lead — accepting it approves the request, declining rejects it |
 | Company Profile | Your legal name, TRN, address, bank, logo, quotation validity, discount limit and default quotation and invoice terms, invoice due days (admins) |
 | Companies | Customer businesses with UAE TRN, industry, size, address; their contacts and leads |
 | Contacts | People at those companies (job title), including everyone who wrote on WhatsApp or email |

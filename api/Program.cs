@@ -87,6 +87,7 @@ builder.Services.AddScoped<ICompanyProfileRepository, CompanyProfileRepository>(
 builder.Services.AddScoped<IQuotationRepository, QuotationRepository>();
 builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+builder.Services.AddScoped<ITicketRepository, TicketRepository>();
 builder.Services.AddScoped<RenewalService>();
 builder.Services.AddSingleton<RenewalWorker>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<RenewalWorker>());

@@ -18,6 +18,7 @@ import {
 import LeadForm from "./LeadForm";
 import LeadQuotations from "./LeadQuotations";
 import LeadSubscriptions from "./LeadSubscriptions";
+import LeadTickets from "./LeadTickets";
 import { statusOf, priorityOf } from "./LeadsPage";
 
 const card = "bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm";
@@ -314,6 +315,7 @@ export default function LeadDetailPage() {
         <div className="space-y-4 min-w-0">
           <LeadQuotations lead={lead} onError={setError} />
           <LeadSubscriptions lead={lead} onError={setError} onChanged={load} />
+          <LeadTickets lead={lead} />
 
           <div className={`${card} p-4`}>
             <div className="flex items-center justify-between mb-3">

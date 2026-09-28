@@ -144,6 +144,58 @@ export const SUBSCRIPTION_STATES = [
 ];
 export const subscriptionStateOf = (s) => SUBSCRIPTION_STATES.find((x) => x.value === s.state) ?? SUBSCRIPTION_STATES[0];
 
+export const TICKET_TYPES = [
+  { value: "SUPPORT", label: "Support", cls: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300" },
+  { value: "CHANGE", label: "Change request", cls: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300" },
+];
+
+export const TICKET_CATEGORIES = [
+  { value: "BUG", label: "Bug / error", type: "SUPPORT" },
+  { value: "HOW_TO", label: "How-to question", type: "SUPPORT" },
+  { value: "DATA_FIX", label: "Data correction", type: "SUPPORT" },
+  { value: "ACCESS", label: "Login / access", type: "SUPPORT" },
+  { value: "PERFORMANCE", label: "Slow / performance", type: "SUPPORT" },
+  { value: "NEW_FEATURE", label: "New feature", type: "CHANGE" },
+  { value: "REPORT", label: "Report / print format", type: "CHANGE" },
+  { value: "INTEGRATION", label: "Integration", type: "CHANGE" },
+  { value: "OTHER", label: "Other" },
+];
+
+export const TICKET_PRIORITIES = [
+  { value: "LOW", label: "Low", sla: "5 days", cls: "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-gray-300" },
+  { value: "MEDIUM", label: "Medium", sla: "3 days", cls: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
+  { value: "HIGH", label: "High", sla: "24 hours", cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
+  { value: "URGENT", label: "Urgent", sla: "4 hours", cls: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
+];
+
+export const TICKET_CHANNELS = [
+  { value: "PHONE", label: "Phone call" },
+  { value: "WHATSAPP", label: "WhatsApp" },
+  { value: "EMAIL", label: "Email" },
+  { value: "OTHER", label: "Other / visit" },
+];
+
+const TS = (value, label, cls) => ({ value, label, cls });
+export const TICKET_STATUSES = [
+  TS("OPEN", "Open", "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"),
+  TS("ESTIMATED", "Estimated", "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300"),
+  TS("APPROVED", "Approved", "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300"),
+  TS("IN_PROGRESS", "In progress", "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"),
+  TS("WAITING", "Waiting on customer", "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"),
+  TS("TESTING", "Testing", "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300"),
+  TS("RESOLVED", "Resolved", "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"),
+  TS("CLOSED", "Closed", "bg-gray-200 text-gray-600 dark:bg-slate-700 dark:text-gray-300"),
+  TS("REJECTED", "Rejected", "bg-gray-200 text-gray-500 line-through dark:bg-slate-700 dark:text-gray-400"),
+];
+export const SUPPORT_FLOW = ["OPEN", "IN_PROGRESS", "WAITING", "RESOLVED", "CLOSED"];
+export const CHANGE_FLOW = ["OPEN", "ESTIMATED", "APPROVED", "IN_PROGRESS", "WAITING", "TESTING", "RESOLVED", "CLOSED", "REJECTED"];
+export const TICKET_DONE = ["RESOLVED", "CLOSED", "REJECTED"];
+// A resolved change request has been delivered.
+export function ticketStatusOf(status, type) {
+  const s = TICKET_STATUSES.find((x) => x.value === status) ?? TICKET_STATUSES[0];
+  return type === "CHANGE" && status === "RESOLVED" ? { ...s, label: "Delivered" } : s;
+}
+
 export const quoteStatusOf =(s) => QUOTE_STATUSES.find((x) => x.value === s) ?? QUOTE_STATUSES[0];
 
 // Same rounding as the API: per line, 2 decimals.
