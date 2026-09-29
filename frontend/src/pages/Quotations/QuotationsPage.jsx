@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { FileText, RefreshCw, Search, Download, ShieldAlert } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { FileText, Plus, RefreshCw, Search, Download, ShieldAlert } from "lucide-react";
 import { QuotationService, openQuotationPdf } from "@/ServiceLayer/QuoteService/QuoteService";
 import { useAuth } from "@/context/AuthContext";
 import { Alerts, inputCls } from "@/components/common/ui";
@@ -10,6 +10,7 @@ import { QUOTE_STATUSES, quoteStatusOf, formatAed } from "@/lib/crm";
 
 export default function QuotationsPage() {
   const { isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [rows, setRows] = useState([]);
   const [filters, setFilters] = useState({ search: "", status: "", approval: "" });
   const [loading, setLoading] = useState(false);
@@ -43,12 +44,17 @@ export default function QuotationsPage() {
           <div className="rounded-xl bg-blue-600/10 p-2"><FileText className="h-6 w-6 text-blue-600" /></div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Quotations</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Create a quotation from a lead, then send, revise and close it here</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Draft a quotation for a lead, then send, revise and close it here</p>
           </div>
         </div>
-        <button onClick={() => load()} className="inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800">
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => load()} className="inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800">
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
+          </button>
+          <button onClick={() => navigate("/quotations/new")} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-medium">
+            <Plus className="h-4 w-4" /> Add Quotation
+          </button>
+        </div>
       </div>
 
       {isAdmin && pending > 0 && filters.approval !== "PENDING" && (
@@ -96,7 +102,7 @@ export default function QuotationsPage() {
             </thead>
             <tbody>
               {rows.length === 0 && !loading && (
-                <tr><td colSpan={8} className="px-4 py-10 text-center text-gray-400">No quotations yet. Open a lead and click <b>New Quotation</b>.</td></tr>
+                <tr><td colSpan={8} className="px-4 py-10 text-center text-gray-400">No quotations yet. Click <b>Add Quotation</b> and choose a lead.</td></tr>
               )}
               {rows.map((q) => {
                 const st = quoteStatusOf(q.status);

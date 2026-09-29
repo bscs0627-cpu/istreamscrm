@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  FileText, Download, Save, Send, Plus, Trash2, CheckCircle2, XCircle, Copy, ShieldCheck, Mail, MessagesSquare, Loader2, X,
+  FileText, Download, Save, Send, User, Plus, Trash2, CheckCircle2, XCircle, Copy, ShieldCheck, Mail, MessagesSquare, Loader2, X,
 } from "lucide-react";
 import { QuotationService, CompanyProfileService, openQuotationPdf } from "@/ServiceLayer/QuoteService/QuoteService";
 import { ProductService } from "@/ServiceLayer/CatalogService/CatalogService";
@@ -178,11 +178,6 @@ export default function QuotationEditorPage() {
           <button onClick={pdf} disabled={!!busy} className={btn}>
             {busy === "pdf" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} {dirty ? "PDF (last saved)" : "PDF"}
           </button>
-          {editable && (
-            <button onClick={save} disabled={!!busy || !dirty} className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-medium disabled:opacity-50">
-              {busy === "save" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save
-            </button>
-          )}
           {isAdmin && q.approvalStatus === "PENDING" && !dirty && (
             <button onClick={approve} disabled={!!busy} className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 text-sm font-medium">
               <ShieldCheck className="h-4 w-4" /> Approve {q.maxLineDiscount}% discount
@@ -263,9 +258,8 @@ export default function QuotationEditorPage() {
         </form>
       )}
 
-      {q.status === "ACCEPTED" && <QuoteInvoices quote={q} onError={setError} />}
-
-      <div className={`${card} p-5 space-y-5`}>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-start">
+      <div className={`${card} p-5 space-y-5 xl:col-span-2`}>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="md:col-span-2">
             <label className={labelCls}>Subject</label>
@@ -368,25 +362,50 @@ export default function QuotationEditorPage() {
             <textarea value={form.terms} onChange={setField("terms")} disabled={!editable} rows={5} className={`${inputCls} text-[13px]`} />
           </div>
         </div>
+
+        {editable && (
+          <div className="flex justify-center gap-2 pt-2">
+            <button type="button" onClick={() => navigate("/quotations")} className={btn}>Cancel</button>
+            <button type="button" onClick={save} disabled={!!busy || !dirty} className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 text-sm font-medium disabled:opacity-50">
+              {busy === "save" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Quotation
+            </button>
+          </div>
+        )}
       </div>
 
-      <div className={`${card} p-4`}>
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Versions of {`QT-${q.quoteYear}-${String(q.quoteSeq).padStart(4, "0")}`}</h3>
-        <ul className="divide-y divide-gray-100 dark:divide-slate-800 text-sm">
-          {history.map((h) => {
-            const hs = quoteStatusOf(h.status);
-            return (
-              <li key={h.quotationId} className={`flex flex-wrap items-center gap-3 py-2 ${h.quotationId === q.quotationId ? "font-semibold" : ""}`}>
-                <Link to={`/quotations/${h.quotationId}`} className="font-mono text-blue-600 hover:underline">{h.quoteNo}</Link>
-                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${hs.cls}`}>{hs.label}</span>
-                <span className="text-gray-600 dark:text-gray-300 tabular-nums">{formatAed(h.grandTotal)}</span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {formatDate(h.quoteDate)}{h.sentAt ? ` · sent ${dateTime(h.sentAt)}` : ""}{h.rejectReason ? ` · ${h.rejectReason}` : ""}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+      <div className="space-y-4">
+        <div className={`${card} p-5`}>
+          <div className="flex items-center gap-2 mb-3">
+            <User className="h-5 w-5 text-gray-400" />
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Customer</h2>
+          </div>
+          <div className="space-y-1 text-sm">
+            <div className="font-medium text-gray-900 dark:text-white">{q.accountName || displayName(q) || "—"}</div>
+            {q.accountName && displayName(q) && <div className="text-gray-600 dark:text-gray-300">{displayName(q)}</div>}
+            {q.mobileNo && <div className="text-gray-500 dark:text-gray-400">+{q.mobileNo}</div>}
+            {q.email && <div className="text-gray-500 dark:text-gray-400">{q.email}</div>}
+            <div className="pt-2"><Link to={`/leads/${q.leadId}`} className="text-blue-600 hover:underline">Lead {q.leadNo}</Link></div>
+          </div>
+        </div>
+        {q.status === "ACCEPTED" && <QuoteInvoices quote={q} onError={setError} />}
+        <div className={`${card} p-4`}>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Versions of {`QT-${q.quoteYear}-${String(q.quoteSeq).padStart(4, "0")}`}</h3>
+          <ul className="divide-y divide-gray-100 dark:divide-slate-800 text-sm">
+            {history.map((h) => {
+              const hs = quoteStatusOf(h.status);
+              return (
+                <li key={h.quotationId} className={`flex flex-wrap items-center gap-3 py-2 ${h.quotationId === q.quotationId ? "font-semibold" : ""}`}>
+                  <Link to={`/quotations/${h.quotationId}`} className="font-mono text-blue-600 hover:underline">{h.quoteNo}</Link>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${hs.cls}`}>{hs.label}</span>
+                  <span className="text-gray-600 dark:text-gray-300 tabular-nums">{formatAed(h.grandTotal)}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {formatDate(h.quoteDate)}{h.sentAt ? ` · sent ${dateTime(h.sentAt)}` : ""}{h.rejectReason ? ` · ${h.rejectReason}` : ""}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>      </div>
       </div>
 
       <DeleteModal open={confirmDelete} name={`${q.quoteNo} (draft)`} onCancel={() => setConfirmDelete(false)}

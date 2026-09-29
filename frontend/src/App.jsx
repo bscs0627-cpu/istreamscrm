@@ -22,6 +22,7 @@ import ProductsPage from "@/pages/Products/ProductsPage";
 import ProductFormPage from "@/pages/Products/ProductFormPage";
 import QuotationsPage from "@/pages/Quotations/QuotationsPage";
 import QuotationEditorPage from "@/pages/Quotations/QuotationEditorPage";
+import QuotationNewPage from "@/pages/Quotations/QuotationNewPage";
 import CompanyProfilePage from "@/pages/CompanyProfile/CompanyProfilePage";
 import InvoicesPage from "@/pages/Invoices/InvoicesPage";
 import InvoiceEditorPage from "@/pages/Invoices/InvoiceEditorPage";
@@ -243,6 +244,7 @@ export default function App() {
       <Route path="/products/new" element={page(<ProductFormPage />, "admin")} />
       <Route path="/products/:id/edit" element={page(<ProductFormPage />, "admin")} />
       <Route path="/quotations" element={page(<QuotationsPage />)} />
+      <Route path="/quotations/new" element={page(<QuotationNewPage />)} />
       <Route path="/quotations/:id" element={page(<QuotationEditorPage />)} />
       <Route path="/invoices" element={page(<InvoicesPage />)} />
       <Route path="/invoices/:id" element={page(<InvoiceEditorPage />)} />
