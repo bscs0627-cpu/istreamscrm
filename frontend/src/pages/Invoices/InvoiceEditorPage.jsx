@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Receipt, Download, Save, Send, Plus, Trash2, BadgeCheck, Ban, Wallet, Mail, MessagesSquare, Loader2, X, BellRing } from "lucide-react";
+import { Receipt, Download, Save, Send, Plus, Trash2, BadgeCheck, Ban, Wallet, Mail, MessagesSquare, Loader2, X, BellRing, User } from "lucide-react";
 import { InvoiceService, openInvoicePdf } from "@/ServiceLayer/QuoteService/QuoteService";
 import { ProductService } from "@/ServiceLayer/CatalogService/CatalogService";
 import { useAuth } from "@/context/AuthContext";
@@ -153,9 +153,6 @@ export default function InvoiceEditorPage() {
           </button>
           {draft && (
             <>
-              <button onClick={save} disabled={!!busy || !dirty} className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-medium disabled:opacity-50">
-                {busy === "save" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save
-              </button>
               <button onClick={issue} disabled={!!busy || dirty} title={dirty ? "Save first" : ""}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm font-medium disabled:opacity-50">
                 {busy === "issue" ? <Loader2 className="h-4 w-4 animate-spin" /> : <BadgeCheck className="h-4 w-4" />} Issue
@@ -246,7 +243,8 @@ export default function InvoiceEditorPage() {
         </form>
       )}
 
-      <div className={`${card} p-5 space-y-5`}>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-start">
+      <div className={`${card} p-5 space-y-5 xl:col-span-2`}>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="md:col-span-2">
             <label className={labelCls}>Stage / Description</label>
@@ -254,15 +252,6 @@ export default function InvoiceEditorPage() {
           </div>
           <div><label className={labelCls}>Invoice Date</label><input type="date" value={form.invoiceDate} onChange={setField("invoiceDate")} disabled={!draft} className={inputCls} /></div>
           <div><label className={labelCls}>Due Date</label><input type="date" value={form.dueDate} onChange={setField("dueDate")} disabled={!draft} className={inputCls} /></div>
-        </div>
-
-        <div className="rounded-lg bg-gray-50 dark:bg-slate-800/50 px-4 py-3 text-sm">
-          <div className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Bill to {draft && "(taken from the company record when issued)"}</div>
-          <div className="font-medium text-gray-900 dark:text-white">{(issued || inv.status === "CANCELLED" ? inv.billToName : null) || inv.accountName || displayName(inv)}</div>
-          <div className="text-gray-600 dark:text-gray-300">
-            {[draft ? [inv.accountAddress, inv.accountCity, inv.accountCountry].filter(Boolean).join(", ") : inv.billToAddress,
-              (draft ? inv.accountTrn : inv.billToTrn) && `TRN ${draft ? inv.accountTrn : inv.billToTrn}`].filter(Boolean).join(" · ") || "No address / TRN on the company record"}
-          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -338,44 +327,63 @@ export default function InvoiceEditorPage() {
             <textarea value={form.notes} onChange={setField("notes")} disabled={!draft} rows={4} maxLength={2000} className={inputCls} />
           </div>
         </div>
+
+        {draft && (
+          <div className="flex justify-center gap-2 pt-2">
+            <button type="button" onClick={() => navigate("/invoices")} className={btn}>Cancel</button>
+            <button type="button" onClick={save} disabled={!!busy || !dirty} className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 text-sm font-medium disabled:opacity-50">
+              {busy === "save" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Invoice
+            </button>
+          </div>
+        )}
       </div>
 
-      {!draft && (
-        <div className={`${card} overflow-hidden`}>
-          <h3 className="px-4 pt-4 pb-2 text-sm font-semibold text-gray-900 dark:text-white">Payments</h3>
-          {inv.payments.length === 0 ? <p className="px-4 pb-4 text-sm text-gray-400">No payments yet.</p> : (
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-slate-800 border-y border-gray-200 dark:border-slate-700">
-                <tr className="text-left text-gray-600 dark:text-gray-300">
-                  <th className="px-4 py-2 font-medium">Date</th>
-                  <th className="px-4 py-2 font-medium">Method</th>
-                  <th className="px-4 py-2 font-medium">Reference</th>
-                  <th className="px-4 py-2 font-medium">Recorded by</th>
-                  <th className="px-4 py-2 font-medium text-right">Amount</th>
-                  {isAdmin && <th className="w-10" />}
-                </tr>
-              </thead>
-              <tbody>
-                {inv.payments.map((p) => (
-                  <tr key={p.paymentId} className="border-b border-gray-100 dark:border-slate-800">
-                    <td className="px-4 py-2 text-gray-700 dark:text-gray-200">{formatDate(p.paymentDate)}</td>
-                    <td className="px-4 py-2 text-gray-600 dark:text-gray-300">{labelOf(PAYMENT_METHODS, p.method)}</td>
-                    <td className="px-4 py-2 text-gray-600 dark:text-gray-300">{p.reference || "—"}{p.notes ? <div className="text-xs text-gray-400">{p.notes}</div> : null}</td>
-                    <td className="px-4 py-2 text-gray-500 dark:text-gray-400">{p.createdByName} · {dateTime(p.createdAt)}</td>
-                    <td className="px-4 py-2 text-right tabular-nums font-medium text-gray-900 dark:text-white">{formatAed(p.amount)}</td>
-                    {isAdmin && (
-                      <td className="px-2 py-2">
-                        <button onClick={() => deletePayment(p)} disabled={!!busy} className="rounded p-1 text-gray-400 hover:text-red-600" title="Remove payment"><X className="h-4 w-4" /></button>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-          {inv.status === "CANCELLED" && <p className="px-4 pb-4 text-sm text-red-600">Cancelled {dateTime(inv.cancelledAt)}: {inv.cancelReason}</p>}
+      <div className="space-y-4">
+        <div className={`${card} p-5`}>
+          <div className="flex items-center gap-2 mb-3">
+            <User className="h-5 w-5 text-gray-400" />
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Bill To</h2>
+          </div>
+          <div className="space-y-1 text-sm">
+            <div className="font-medium text-gray-900 dark:text-white">{(issued || inv.status === "CANCELLED" ? inv.billToName : null) || inv.accountName || displayName(inv)}</div>
+            <div className="text-gray-600 dark:text-gray-300">
+              {[draft ? [inv.accountAddress, inv.accountCity, inv.accountCountry].filter(Boolean).join(", ") : inv.billToAddress,
+                (draft ? inv.accountTrn : inv.billToTrn) && `TRN ${draft ? inv.accountTrn : inv.billToTrn}`].filter(Boolean).join(" · ") || "No address / TRN on the customer record"}
+            </div>
+            {displayName(inv) && (inv.billToName || inv.accountName) && <div className="text-gray-500 dark:text-gray-400">{displayName(inv)}</div>}
+            {inv.mobileNo && <div className="text-gray-500 dark:text-gray-400">+{inv.mobileNo}</div>}
+            {inv.email && <div className="text-gray-500 dark:text-gray-400">{inv.email}</div>}
+            {draft && <p className="pt-1 text-xs text-gray-400">Taken from the customer record when issued.</p>}
+          </div>
         </div>
-      )}
+
+        {!draft && (
+          <div className={`${card} p-5`}>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Payments</h3>
+            {inv.payments.length === 0 ? <p className="text-sm text-gray-400">No payments yet.</p> : (
+              <ul className="divide-y divide-gray-100 dark:divide-slate-800">
+                {inv.payments.map((p) => (
+                  <li key={p.paymentId} className="flex items-start justify-between gap-3 py-2 text-sm">
+                    <div className="min-w-0">
+                      <div className="font-medium tabular-nums text-gray-900 dark:text-white">{formatAed(p.amount)}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        {formatDate(p.paymentDate)} · {labelOf(PAYMENT_METHODS, p.method)}{p.reference ? ` · ${p.reference}` : ""}
+                      </div>
+                      {p.notes && <div className="text-xs text-gray-400">{p.notes}</div>}
+                      <div className="text-xs text-gray-400">{p.createdByName} · {dateTime(p.createdAt)}</div>
+                    </div>
+                    {isAdmin && (
+                      <button onClick={() => deletePayment(p)} disabled={!!busy} className="rounded p-1 text-gray-400 hover:text-red-600" title="Remove payment"><X className="h-4 w-4" /></button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {inv.status === "CANCELLED" && <p className="mt-3 text-sm text-red-600">Cancelled {dateTime(inv.cancelledAt)}: {inv.cancelReason}</p>}
+          </div>
+        )}
+      </div>
+      </div>
 
       <DeleteModal open={confirmDelete} name={`${inv.invoiceNo} (draft)`} onCancel={() => setConfirmDelete(false)}
         onConfirm={async () => {
