@@ -1,23 +1,19 @@
 import { useEffect, useState } from "react";
-import { Users, Plus, RefreshCw, Search, X, Pencil, KeyRound } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Users, Plus, RefreshCw, Search, Pencil, KeyRound } from "lucide-react";
 import { StaffService } from "@/ServiceLayer/AuthService/AuthService";
 import { useAuth } from "@/context/AuthContext";
-import { Alerts, inputCls, labelCls } from "@/components/common/ui";
-import { apiError } from "@/lib/apiClient";
+import { Alerts, inputCls } from "@/components/common/ui";
 import { dateTime } from "@/lib/time";
-
-const emptyForm = { fullName: "", email: "", mobileNo: "", role: "STAFF", isActive: "T", password: "" };
 
 export default function StaffPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [rows, setRows] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  const [editId, setEditId] = useState(null);
-  const [form, setForm] = useState(emptyForm);
-  const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState("");
+  const [success, setSuccess] = useState(location.state?.success ?? "");
   const [error, setError] = useState("");
 
   const load = async () => {
@@ -28,46 +24,6 @@ export default function StaffPage() {
   };
 
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
-
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-  const openAdd = () => { setEditId(null); setForm(emptyForm); setShowForm(true); };
-  const openEdit = (s) => {
-    setEditId(s.userId);
-    setForm({ fullName: s.fullName, email: s.email ?? "", mobileNo: s.mobileNo ?? "", role: s.role, isActive: s.isActive, password: "" });
-    setShowForm(true);
-  };
-  const isSelf = editId === user?.userId;
-
-  const submit = async (e) => {
-    e.preventDefault();
-    if (saving) return;
-    const mobile = form.mobileNo.replace(/[^\d]/g, "");
-    if (!form.fullName.trim()) { setError("Name is required."); return; }
-    if (form.role === "ADMIN" && !form.email.trim()) { setError("Email is required for an admin — admins sign in with email."); return; }
-    if (form.role === "STAFF" && !mobile) { setError("Mobile number is required for staff — they sign in with it."); return; }
-    if (!editId && form.password.length < 6) { setError("Password must be at least 6 characters."); return; }
-    setSaving(true); setError("");
-    const payload = {
-      fullName: form.fullName.trim(),
-      email: form.email.trim() || null,
-      mobileNo: mobile || null,
-      role: form.role,
-      isActive: form.isActive,
-      password: form.password || null,
-    };
-    try {
-      if (editId) { await StaffService.update(editId, payload); setSuccess("Staff member updated."); }
-      else {
-        await StaffService.create(payload);
-        setSuccess(form.role === "STAFF"
-          ? `Staff member added. They sign in on the Staff tab with admin email ${user?.email}, mobile ${mobile} and the password you set.`
-          : "Admin added. They sign in on the Admin tab with their email and password.");
-      }
-      setShowForm(false); setEditId(null); setForm(emptyForm); load();
-    } catch (err) {
-      setError(apiError(err, "Failed to save staff member."));
-    } finally { setSaving(false); }
-  };
 
   return (
     <div className="p-6 space-y-4">
@@ -83,7 +39,7 @@ export default function StaffPage() {
           <button onClick={load} className="inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800">
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
           </button>
-          <button onClick={openAdd} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-medium">
+          <button onClick={() => navigate("/staff/new")} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-medium">
             <Plus className="h-4 w-4" /> Add Staff
           </button>
         </div>
@@ -104,52 +60,6 @@ export default function StaffPage() {
       </div>
 
       <Alerts success={success} error={error} onClearSuccess={() => setSuccess("")} onClearError={() => setError("")} />
-
-      {showForm && (
-        <form onSubmit={submit} className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{editId ? "Edit Staff" : "New Staff"}</h2>
-            <button type="button" onClick={() => setShowForm(false)}><X className="h-5 w-5 text-gray-400 hover:text-gray-600" /></button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <label className={labelCls}>Full Name *</label>
-              <input value={form.fullName} onChange={set("fullName")} maxLength={150} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Mobile {form.role === "STAFF" && "*"}</label>
-              <input value={form.mobileNo} onChange={set("mobileNo")} maxLength={20} className={inputCls} placeholder="With country code, e.g. 919876543210" />
-            </div>
-            <div>
-              <label className={labelCls}>Email {form.role === "ADMIN" ? "*" : "(optional)"}</label>
-              <input type="email" value={form.email} onChange={set("email")} maxLength={150} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Role</label>
-              <select value={form.role} onChange={set("role")} disabled={isSelf} className={inputCls}>
-                <option value="STAFF">Staff — sees only assigned customers</option>
-                <option value="ADMIN">Admin — sees everything, assigns customers</option>
-              </select>
-            </div>
-            <div>
-              <label className={labelCls}>Status</label>
-              <select value={form.isActive} onChange={set("isActive")} disabled={isSelf} className={inputCls}>
-                <option value="T">Active</option>
-                <option value="F">Inactive — cannot sign in</option>
-              </select>
-            </div>
-            <div>
-              <label className={labelCls}>{editId ? "Reset Password" : "Password *"}</label>
-              <input type="password" value={form.password} onChange={set("password")} autoComplete="new-password" className={inputCls}
-                placeholder={editId ? "Leave blank to keep current" : "Min 6 characters"} />
-            </div>
-          </div>
-          <div className="flex justify-end gap-2 mt-5">
-            <button type="button" onClick={() => setShowForm(false)} className="rounded-lg border border-gray-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800">Cancel</button>
-            <button type="submit" disabled={saving} className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 text-sm font-medium disabled:opacity-60">{saving ? "Saving..." : editId ? "Update" : "Save"}</button>
-          </div>
-        </form>
-      )}
 
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
@@ -198,7 +108,7 @@ export default function StaffPage() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => openEdit(s)} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-blue-600" title="Edit"><Pencil className="h-4 w-4" /></button>
+                    <button onClick={() => navigate(`/staff/${s.userId}/edit`)} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-blue-600" title="Edit"><Pencil className="h-4 w-4" /></button>
                   </td>
                 </tr>
               ))}

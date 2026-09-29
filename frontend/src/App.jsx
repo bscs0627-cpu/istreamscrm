@@ -11,6 +11,7 @@ import DashboardPage from "@/pages/Dashboard/DashboardPage";
 import InboxPage from "@/pages/Inbox/InboxPage";
 import CustomersPage from "@/pages/Customers/CustomersPage";
 import StaffPage from "@/pages/Staff/StaffPage";
+import StaffFormPage from "@/pages/Staff/StaffFormPage";
 import NotesPage from "@/pages/Notes/NotesPage";
 import WhatsAppSettingsPage from "@/pages/WhatsAppSettings/WhatsAppSettingsPage";
 import EmailInboxPage from "@/pages/EmailInbox/EmailInboxPage";
@@ -261,6 +262,8 @@ export default function App() {
       <Route path="/company-profile" element={page(<CompanyProfilePage />, "admin")} />
       <Route path="/reports" element={page(<ReportsPage />)} />
       <Route path="/staff" element={page(<StaffPage />, "admin")} />
+      <Route path="/staff/new" element={page(<StaffFormPage />, "admin")} />
+      <Route path="/staff/:id/edit" element={page(<StaffFormPage />, "admin")} />
       <Route path="/notes" element={page(<NotesPage />)} />
       <Route path="/whatsapp-settings" element={page(<WhatsAppSettingsPage />, "admin")} />
       <Route path="/email-settings" element={page(<EmailSettingsPage />, "admin")} />
