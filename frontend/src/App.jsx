@@ -3,7 +3,7 @@ import { Routes, Route, Navigate, NavLink, useLocation } from "react-router-dom"
 import {
   LayoutDashboard, MessagesSquare, Contact, Users, NotebookPen, MessageCircle, ShieldAlert, LogOut, Mail, AtSign,
   Building2, Package, Target, CalendarClock, BarChart3, FileText, Landmark, Receipt, Wallet, Repeat, LifeBuoy,
-  Menu, X, Sun, Moon, Maximize, Minimize,
+  PanelLeft, X, Sun, Moon, Maximize, Minimize,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import LoginPage from "@/pages/Auth/LoginPage";
@@ -80,9 +80,9 @@ function RequireAuth({ access, children }) {
   return children;
 }
 
-function Sidebar({ open, onClose }) {
+function Sidebar({ open, collapsed, onClose }) {
   const auth = useAuth();
-  const { user, logout, unread, emailUnread, followUpsDue } = auth;
+  const { unread, emailUnread, followUpsDue } = auth;
   const badges = { "/inbox": unread, "/email-inbox": emailUnread, "/follow-ups": followUpsDue };
   const linkClass = ({ isActive }) =>
     `flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -94,13 +94,13 @@ function Sidebar({ open, onClose }) {
   return (
     <>
     {open && <div className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={onClose} />}
-    <aside className={`fixed inset-y-0 left-0 z-40 w-60 shrink-0 transform transition-transform md:static md:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"} border-r border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 flex flex-col`}>
+    <aside className={`fixed inset-y-0 left-0 z-40 w-60 shrink-0 transform transition-transform md:static md:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"} ${collapsed ? "md:hidden" : ""} border-r border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 flex flex-col`}>
       <div className="flex items-center gap-2 mb-1 px-2">
         <MessageCircle className="h-6 w-6 shrink-0 text-green-600" />
         <span className="flex-1 text-base font-bold leading-tight text-gray-900 dark:text-white">iStreams CRM</span>
         <button onClick={onClose} className="md:hidden text-gray-500" aria-label="Close menu"><X className="h-5 w-5" /></button>
       </div>
-      <div className="px-2 mb-6 text-xs text-gray-500 dark:text-gray-400 truncate" title={user?.companyName}>{user?.companyName}</div>
+      <div className="mb-6" />
 
       <nav className="space-y-1 flex-1 overflow-y-auto">
         {NAV.filter((n) => allowed(n.access, auth)).map((n) => (
@@ -116,18 +116,6 @@ function Sidebar({ open, onClose }) {
         ))}
       </nav>
 
-      <div className="border-t border-gray-200 dark:border-slate-800 pt-3 mt-3">
-        <div className="px-2 mb-2">
-          <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{user?.fullName}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-            {user?.isSuperAdmin === "T" ? "Super Admin" : user?.role === "ADMIN" ? "Admin" : "Staff"}
-          </div>
-        </div>
-        <button onClick={logout}
-          className="w-full flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800">
-          <LogOut className="h-4 w-4" /> Sign out
-        </button>
-      </div>
     </aside>
     </>
   );
@@ -178,17 +166,24 @@ function Shell({ children }) {
     run();
     return () => { observer.disconnect(); cancelAnimationFrame(frame); };
   }, []);
+  const { user, logout } = useAuth();
   const [menu, setMenu] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [dark, toggleTheme] = useTheme();
   const [full, toggleFull] = useFullscreen();
   const btn = "rounded-lg p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800";
   return (
     <div className="flex h-full bg-gray-50 dark:bg-slate-950">
-      <Sidebar open={menu} onClose={() => setMenu(false)} />
+      <Sidebar open={menu} collapsed={collapsed} onClose={() => setMenu(false)} />
       <div className="flex-1 min-w-0 flex flex-col">
         <header className="shrink-0 flex items-center gap-2 border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2">
-          <button onClick={() => setMenu(true)} className={`${btn} md:hidden`} aria-label="Open menu"><Menu className="h-5 w-5" /></button>
-          <span className="md:hidden text-sm font-bold text-gray-900 dark:text-white">iStreams CRM</span>
+          <button onClick={() => (matchMedia("(min-width: 768px)").matches ? setCollapsed((c) => !c) : setMenu(true))} className={btn} aria-label="Toggle menu">
+            <PanelLeft className="h-5 w-5" />
+          </button>
+          <span className="ml-1 text-sm font-semibold text-gray-900 dark:text-white truncate">{user?.companyName}</span>
+          <span className="hidden sm:inline rounded-md bg-slate-900 dark:bg-slate-700 px-2 py-0.5 text-xs font-semibold text-white whitespace-nowrap">
+            {user?.isSuperAdmin === "T" ? "Super Admin Mode" : user?.role === "ADMIN" ? "Admin Mode" : "Staff Mode"}
+          </span>
           <div className="ml-auto flex items-center gap-1">
             <button onClick={toggleFull} className={`${btn} hidden sm:block`} title={full ? "Exit full screen" : "Full screen"} aria-label="Toggle full screen">
               {full ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
@@ -196,6 +191,16 @@ function Shell({ children }) {
             <button onClick={toggleTheme} className={btn} title={dark ? "Light theme" : "Dark theme"} aria-label="Toggle theme">
               {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
+            <div className="flex items-center gap-2 ml-2 pl-3 border-l border-gray-200 dark:border-slate-800">
+              <div className="h-9 w-9 shrink-0 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
+                {(user?.fullName || "?").trim().charAt(0).toUpperCase()}
+              </div>
+              <div className="hidden sm:block leading-tight max-w-[10rem]">
+                <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{user?.fullName}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</div>
+              </div>
+              <button onClick={logout} className={btn} title="Sign out" aria-label="Sign out"><LogOut className="h-5 w-5" /></button>
+            </div>
           </div>
         </header>
         <main ref={mainRef} className="flex-1 overflow-auto">{children}</main>
