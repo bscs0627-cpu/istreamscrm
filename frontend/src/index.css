@@ -16,3 +16,42 @@ body,
     flex-wrap: wrap;
   }
 }
+
+@media (max-width: 767px) {
+  main table:not([data-scroll]),
+  main table:not([data-scroll]) tbody {
+    display: block;
+    width: 100%;
+  }
+  main table:not([data-scroll]) thead {
+    display: none;
+  }
+  main table:not([data-scroll]) tbody tr {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid rgb(229 231 235);
+  }
+  main table:not([data-scroll]) tbody td {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.25rem 0 !important;
+    text-align: right !important;
+  }
+  main table:not([data-scroll]) tbody td[data-label]::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: rgb(107 114 128);
+    text-align: left;
+  }
+  main table:not([data-scroll]) tbody td[colspan] {
+    display: block;
+    text-align: center !important;
+  }
+  .dark main table:not([data-scroll]) tbody tr {
+    border-color: rgb(30 41 59);
+  }
+}

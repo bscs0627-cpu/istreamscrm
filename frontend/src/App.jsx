@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Routes, Route, Navigate, NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, MessagesSquare, Contact, Users, NotebookPen, MessageCircle, ShieldAlert, LogOut, Mail, AtSign,
@@ -155,7 +155,29 @@ function useFullscreen() {
   return [full, toggle];
 }
 
+function labelTables(root) {
+  root.querySelectorAll("table").forEach((t) => {
+    const heads = [...t.querySelectorAll("thead th")].map((h) => h.textContent.trim());
+    if (!heads.length) return;
+    t.querySelectorAll("tbody tr").forEach((tr) => {
+      [...tr.children].forEach((td, i) => {
+        if (td.colSpan === 1 && heads[i] && td.dataset.label !== heads[i]) td.dataset.label = heads[i];
+      });
+    });
+  });
+}
+
 function Shell({ children }) {
+  const mainRef = useRef(null);
+  useEffect(() => {
+    const el = mainRef.current;
+    let frame = 0;
+    const run = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(() => labelTables(el)); };
+    const observer = new MutationObserver(run);
+    observer.observe(el, { childList: true, subtree: true });
+    run();
+    return () => { observer.disconnect(); cancelAnimationFrame(frame); };
+  }, []);
   const [menu, setMenu] = useState(false);
   const [dark, toggleTheme] = useTheme();
   const [full, toggleFull] = useFullscreen();
@@ -176,7 +198,7 @@ function Shell({ children }) {
             </button>
           </div>
         </header>
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main ref={mainRef} className="flex-1 overflow-auto">{children}</main>
       </div>
     </div>
   );
