@@ -23,6 +23,7 @@ The ports differ from the real-estate CRM (5097 / 5098), so both can run on one 
    sqlcmd -I -S "(localdb)\MSSQLLocalDB" -i database/07_subscriptions.sql
    sqlcmd -I -S "(localdb)\MSSQLLocalDB" -i database/08_tickets.sql
    sqlcmd -I -S "(localdb)\MSSQLLocalDB" -i database/09_account_fields.sql
+   sqlcmd -I -S "(localdb)\MSSQLLocalDB" -i database/10_product_details.sql
    ```
 2. Create `api/appsettings.Development.json` (not committed):
    ```json

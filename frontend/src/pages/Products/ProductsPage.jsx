@@ -1,21 +1,11 @@
 import { useEffect, useState } from "react";
-import { Package, Plus, RefreshCw, Search, X, Pencil, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Package, Plus, RefreshCw, Search, Pencil, Trash2 } from "lucide-react";
 import { ProductService } from "@/ServiceLayer/CatalogService/CatalogService";
 import { useAuth } from "@/context/AuthContext";
-import { Alerts, DeleteModal, inputCls, labelCls } from "@/components/common/ui";
+import { Alerts, DeleteModal, inputCls } from "@/components/common/ui";
 import { apiError } from "@/lib/apiClient";
-import { ITEM_TYPES, UNITS, PRODUCT_CATEGORIES, labelOf, formatAed } from "@/lib/crm";
-
-const emptyForm = {
-  productCode: "", productName: "", category: "ERP", itemType: "LICENSE", unit: "PER_USER", price: "", vatPct: "5",
-  description: "", isActive: "T",
-};
-
-// Sensible default unit when the type changes (the user can still pick another).
-const DEFAULT_UNIT = {
-  LICENSE: "PER_USER", SUBSCRIPTION: "PER_USER_MONTH", IMPLEMENTATION: "FIXED", CUSTOMIZATION: "PER_HOUR",
-  AMC: "PER_YEAR", TRAINING: "PER_DAY", HARDWARE: "FIXED", OTHER: "FIXED",
-};
+import { ITEM_TYPES, UNITS, labelOf, formatAed } from "@/lib/crm";
 
 const TYPE_CLS = {
   LICENSE: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
@@ -28,14 +18,11 @@ const TYPE_CLS = {
 
 export default function ProductsPage() {
   const { isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [rows, setRows] = useState([]);
   const [categories, setCategories] = useState([]);
   const [filters, setFilters] = useState({ search: "", category: "", itemType: "" });
   const [loading, setLoading] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  const [editId, setEditId] = useState(null);
-  const [form, setForm] = useState(emptyForm);
-  const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
@@ -61,42 +48,11 @@ export default function ProductsPage() {
     if (k !== "search") load(next);
   };
 
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-  const setType = (e) => setForm((f) => ({ ...f, itemType: e.target.value, unit: DEFAULT_UNIT[e.target.value] ?? f.unit }));
-  const openAdd = () => { setEditId(null); setForm(emptyForm); setShowForm(true); };
-  const openEdit = (p) => {
-    setEditId(p.productId);
-    setForm({
-      productCode: p.productCode, productName: p.productName, category: p.category, itemType: p.itemType, unit: p.unit,
-      price: String(p.price), vatPct: String(p.vatPct), description: p.description ?? "", isActive: p.isActive,
-    });
-    setShowForm(true);
-  };
-
-  const submit = async (e) => {
-    e.preventDefault();
-    if (saving) return;
-    if (!form.productCode.trim() || !form.productName.trim() || !form.category.trim()) { setError("Code, name and category are required."); return; }
-    if (form.price === "" || Number(form.price) < 0) { setError("Enter the price in AED (0 is allowed)."); return; }
-    setSaving(true); setError("");
-    const payload = { ...form, price: Number(form.price), vatPct: Number(form.vatPct || 0), description: form.description.trim() || null };
-    try {
-      if (editId) { await ProductService.update(editId, payload); setSuccess("Product updated."); }
-      else { await ProductService.create(payload); setSuccess("Product added."); }
-      setShowForm(false); setEditId(null); setForm(emptyForm); load();
-    } catch (err) {
-      setError(apiError(err, "Failed to save product."));
-    } finally { setSaving(false); }
-  };
-
   const confirmDelete = async () => {
     try { await ProductService.remove(deleteTarget.productId); setSuccess("Product deleted."); }
     catch (err) { setError(apiError(err, "Failed to delete product.")); }
     finally { setDeleteTarget(null); load(); }
   };
-
-  const allCategories = [...new Set([...PRODUCT_CATEGORIES, ...categories])];
-  const withVat = form.price !== "" ? Number(form.price) * (1 + Number(form.vatPct || 0) / 100) : null;
 
   return (
     <div className="p-6 space-y-4">
@@ -113,7 +69,7 @@ export default function ProductsPage() {
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
           </button>
           {isAdmin && (
-            <button onClick={openAdd} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-medium">
+            <button onClick={() => navigate("/products/new")} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-medium">
               <Plus className="h-4 w-4" /> Add Product
             </button>
           )}
@@ -138,66 +94,6 @@ export default function ProductsPage() {
       </div>
 
       <Alerts success={success} error={error} onClearSuccess={() => setSuccess("")} onClearError={() => setError("")} />
-
-      {showForm && (
-        <form onSubmit={submit} className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{editId ? "Edit Product" : "New Product"}</h2>
-            <button type="button" onClick={() => setShowForm(false)}><X className="h-5 w-5 text-gray-400 hover:text-gray-600" /></button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className={labelCls}>Code *</label>
-              <input value={form.productCode} onChange={set("productCode")} maxLength={30} className={`${inputCls} uppercase`} placeholder="e.g. ERP-LIC" />
-            </div>
-            <div className="lg:col-span-2">
-              <label className={labelCls}>Name *</label>
-              <input value={form.productName} onChange={set("productName")} maxLength={200} className={inputCls} placeholder="e.g. iStreams ERP – User License" />
-            </div>
-            <div>
-              <label className={labelCls}>Category *</label>
-              <input value={form.category} onChange={set("category")} list="product-categories" maxLength={50} className={inputCls} />
-              <datalist id="product-categories">{allCategories.map((c) => <option key={c} value={c} />)}</datalist>
-            </div>
-            <div>
-              <label className={labelCls}>Type *</label>
-              <select value={form.itemType} onChange={setType} className={inputCls}>
-                {ITEM_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className={labelCls}>Priced *</label>
-              <select value={form.unit} onChange={set("unit")} className={inputCls}>
-                {UNITS.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className={labelCls}>Price (AED, before VAT) *</label>
-              <input type="number" min="0" step="0.01" value={form.price} onChange={set("price")} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>VAT %</label>
-              <input type="number" min="0" max="100" step="0.01" value={form.vatPct} onChange={set("vatPct")} className={inputCls} />
-              {withVat !== null && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">With VAT: {formatAed(withVat)}</p>}
-            </div>
-            <div className="md:col-span-2 lg:col-span-3">
-              <label className={labelCls}>Description (shown on quotations)</label>
-              <textarea value={form.description} onChange={set("description")} rows={2} maxLength={2000} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Status</label>
-              <select value={form.isActive} onChange={set("isActive")} className={inputCls}>
-                <option value="T">Active</option>
-                <option value="F">Inactive</option>
-              </select>
-            </div>
-          </div>
-          <div className="flex justify-end gap-2 mt-5">
-            <button type="button" onClick={() => setShowForm(false)} className="rounded-lg border border-gray-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800">Cancel</button>
-            <button type="submit" disabled={saving} className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 text-sm font-medium disabled:opacity-60">{saving ? "Saving..." : editId ? "Update" : "Save"}</button>
-          </div>
-        </form>
-      )}
 
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
@@ -247,7 +143,7 @@ export default function ProductsPage() {
                   {isAdmin && (
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => openEdit(p)} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-blue-600" title="Edit"><Pencil className="h-4 w-4" /></button>
+                        <button onClick={() => navigate(`/products/${p.productId}/edit`)} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-blue-600" title="Edit"><Pencil className="h-4 w-4" /></button>
                         <button onClick={() => setDeleteTarget(p)} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-red-600" title="Delete"><Trash2 className="h-4 w-4" /></button>
                       </div>
                     </td>

@@ -101,6 +101,8 @@ export const COUNTRIES = [
   "Egypt", "Jordan", "Lebanon", "United Kingdom", "United States", "Canada", "Australia", "Singapore", "Malaysia", "Other",
 ];
 
+export const SUB_DETAIL_TYPES = ["Edition / Plan", "Number of users", "Duration", "Module", "Add-on", "Size / Capacity", "Other"];
+
 export const COMPANY_SIZES = ["1-10", "11-50", "51-200", "201-500", "500+"];
 
 export const INDUSTRIES = [

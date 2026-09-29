@@ -69,14 +69,62 @@ public class ProductRow
     public decimal VatPct { get; set; }
     public string? Description { get; set; }
     public string IsActive { get; set; } = "T";
+    public string? SupplierRef { get; set; }
+    public decimal? MarginPct { get; set; }
+    public string? SubCategory { get; set; }
+    public string? Image { get; set; }
+    public string? Specifications { get; set; }
+    public string HasSubProducts { get; set; } = "F";
+    public string? SubDetailType { get; set; }
+    public string? SubUom { get; set; }
+    public decimal ConversionRate { get; set; } = 1;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }
 
+public class SubProductRow
+{
+    public int SubId { get; set; }
+    public int ProductId { get; set; }
+    public string SubName { get; set; } = string.Empty;
+    public string? Detail { get; set; }
+    public decimal Price { get; set; }
+    public string? Image { get; set; }
+    public string IsActive { get; set; } = "T";
+}
+
+public class SubProductOptionRow
+{
+    public int SubId { get; set; }
+    public int ProductId { get; set; }
+    public string SubName { get; set; } = string.Empty;
+    public string? Detail { get; set; }
+    public decimal Price { get; set; }
+}
+
+public class SaveSubProductDto
+{
+    [Required, MaxLength(200)] public string SubName { get; set; } = string.Empty;
+    [MaxLength(200)] public string? Detail { get; set; }
+    [Range(0, 10000000000)] public decimal Price { get; set; }
+    [MaxLength(400000)] public string? Image { get; set; }
+    [Required, RegularExpression("T|F")] public string IsActive { get; set; } = "T";
+}
+
 public class SaveProductDto
 {
-    [Required, MaxLength(30), RegularExpression(@"^[A-Za-z0-9\-_]+$", ErrorMessage = "Code: letters, numbers, - and _ only.")]
+    // Blank on create = the next free ITM number.
+    [MaxLength(30), RegularExpression(@"^[A-Za-z0-9\-_]*$", ErrorMessage = "Code: letters, numbers, - and _ only.")]
     public string ProductCode { get; set; } = string.Empty;
+    [MaxLength(100)] public string? SupplierRef { get; set; }
+    [Range(0, 1000)] public decimal? MarginPct { get; set; }
+    [MaxLength(50)] public string? SubCategory { get; set; }
+    [MaxLength(400000)] public string? Image { get; set; }
+    public string? Specifications { get; set; }
+    [RegularExpression("T|F")] public string HasSubProducts { get; set; } = "F";
+    [MaxLength(50)] public string? SubDetailType { get; set; }
+    [RegularExpression(ProductCodes.Units)] public string? SubUom { get; set; }
+    [Range(0, 1000000)] public decimal ConversionRate { get; set; } = 1;
     [Required, MaxLength(200)] public string ProductName { get; set; } = string.Empty;
     [Required, MaxLength(50)] public string Category { get; set; } = string.Empty;
     [Required, RegularExpression(ProductCodes.ItemTypes)] public string ItemType { get; set; } = "LICENSE";

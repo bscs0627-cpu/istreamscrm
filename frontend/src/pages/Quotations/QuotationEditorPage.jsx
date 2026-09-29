@@ -40,6 +40,7 @@ export default function QuotationEditorPage() {
   const [form, setForm] = useState(null);
   const [dirty, setDirty] = useState(false);
   const [products, setProducts] = useState([]);
+  const [subOptions, setSubOptions] = useState([]);
   const [limit, setLimit] = useState(null);
   const [history, setHistory] = useState([]);
   const [sendPanel, setSendPanel] = useState(null);
@@ -65,6 +66,7 @@ export default function QuotationEditorPage() {
   useEffect(() => {
     load();
     ProductService.getAll({ activeOnly: true }).then(setProducts).catch(() => {});
+    ProductService.subOptions().then(setSubOptions).catch(() => {});
     CompanyProfileService.get().then((p) => setLimit(p.maxDiscountPct)).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
@@ -88,6 +90,11 @@ export default function QuotationEditorPage() {
   const setField = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target.value })); setDirty(true); };
   const setLine = (i, k, v) => { setForm((f) => ({ ...f, lines: f.lines.map((l, j) => (j === i ? { ...l, [k]: v } : l)) })); setDirty(true); };
   const removeLine = (i) => { setForm((f) => ({ ...f, lines: f.lines.filter((_, j) => j !== i) })); setDirty(true); };
+  const addSub = (sub) => {
+    const p = products.find((x) => x.productId === sub.productId);
+    if (!p) return;
+    addLine({ ...p, productName: `${p.productName} – ${sub.subName}`, description: sub.detail, price: sub.price });
+  };
   const addLine = (p) => {
     const line = p
       ? { productId: p.productId, description: p.description ? `${p.productName}\n${p.description}` : p.productName, unit: p.unit,
@@ -319,10 +326,17 @@ export default function QuotationEditorPage() {
 
         {editable && (
           <div className="flex flex-wrap items-center gap-2">
-            <select value="" onChange={(e) => { const p = products.find((x) => String(x.productId) === e.target.value); if (p) addLine(p); }}
+            <select value="" onChange={(e) => {
+              if (e.target.value.startsWith("s")) { const sub = subOptions.find((x) => `s${x.subId}` === e.target.value); if (sub) addSub(sub); return; }
+              const p = products.find((x) => String(x.productId) === e.target.value); if (p) addLine(p);
+            }}
               className={`${inputCls.replace("w-full ", "")} w-72`}>
               <option value="">+ Add product from price list…</option>
               {products.map((p) => <option key={p.productId} value={p.productId}>{p.productCode} · {p.productName} ({formatAed(p.price)})</option>)}
+              {subOptions.map((s) => {
+                const p = products.find((x) => x.productId === s.productId);
+                return p && <option key={`s${s.subId}`} value={`s${s.subId}`}>{p.productCode} · {p.productName} – {s.subName} ({formatAed(s.price)})</option>;
+              })}
             </select>
             <button onClick={() => addLine(null)} className={btn}><Plus className="h-4 w-4" /> Free-text line</button>
           </div>

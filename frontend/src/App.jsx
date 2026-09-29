@@ -19,6 +19,7 @@ import SuperAdminPage from "@/pages/SuperAdmin/SuperAdminPage";
 import AccountsPage from "@/pages/Accounts/AccountsPage";
 import AccountFormPage from "@/pages/Accounts/AccountFormPage";
 import ProductsPage from "@/pages/Products/ProductsPage";
+import ProductFormPage from "@/pages/Products/ProductFormPage";
 import QuotationsPage from "@/pages/Quotations/QuotationsPage";
 import QuotationEditorPage from "@/pages/Quotations/QuotationEditorPage";
 import CompanyProfilePage from "@/pages/CompanyProfile/CompanyProfilePage";
@@ -236,6 +237,8 @@ export default function App() {
       <Route path="/accounts/new" element={page(<AccountFormPage />)} />
       <Route path="/accounts/:id/edit" element={page(<AccountFormPage />)} />
       <Route path="/products" element={page(<ProductsPage />)} />
+      <Route path="/products/new" element={page(<ProductFormPage />, "admin")} />
+      <Route path="/products/:id/edit" element={page(<ProductFormPage />, "admin")} />
       <Route path="/quotations" element={page(<QuotationsPage />)} />
       <Route path="/quotations/:id" element={page(<QuotationEditorPage />)} />
       <Route path="/invoices" element={page(<InvoicesPage />)} />
