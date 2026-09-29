@@ -28,6 +28,7 @@ import InvoicesPage from "@/pages/Invoices/InvoicesPage";
 import InvoiceEditorPage from "@/pages/Invoices/InvoiceEditorPage";
 import ReceivablesPage from "@/pages/Receivables/ReceivablesPage";
 import SubscriptionsPage from "@/pages/Subscriptions/SubscriptionsPage";
+import SubscriptionFormPage from "@/pages/Subscriptions/SubscriptionFormPage";
 import TicketsPage from "@/pages/Tickets/TicketsPage";
 import TicketDetailPage from "@/pages/Tickets/TicketDetailPage";
 import TicketFormPage from "@/pages/Tickets/TicketFormPage";
@@ -251,6 +252,8 @@ export default function App() {
       <Route path="/invoices/:id" element={page(<InvoiceEditorPage />)} />
       <Route path="/receivables" element={page(<ReceivablesPage />)} />
       <Route path="/subscriptions" element={page(<SubscriptionsPage />)} />
+      <Route path="/subscriptions/new" element={page(<SubscriptionFormPage />)} />
+      <Route path="/subscriptions/:id/edit" element={page(<SubscriptionFormPage />)} />
       <Route path="/tickets" element={page(<TicketsPage />)} />
       <Route path="/tickets/new" element={page(<TicketFormPage />)} />
       <Route path="/tickets/:id" element={page(<TicketDetailPage />)} />

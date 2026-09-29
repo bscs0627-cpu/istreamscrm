@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Repeat, RefreshCw, Search, Pencil, BellRing, Ban, FilePlus2, PlayCircle, Loader2 } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Repeat, Plus, RefreshCw, Search, Pencil, BellRing, Ban, FilePlus2, PlayCircle, Loader2 } from "lucide-react";
 import { SubscriptionService } from "@/ServiceLayer/QuoteService/QuoteService";
 import { Alerts, inputCls } from "@/components/common/ui";
 import { useAuth } from "@/context/AuthContext";
@@ -8,7 +8,7 @@ import { apiError } from "@/lib/apiClient";
 import { formatDate } from "@/lib/utils";
 import { displayName } from "@/lib/time";
 import { BILLING_CYCLES, SUBSCRIPTION_STATES, UNITS, formatAed, formatNumber, labelOf, subscriptionStateOf } from "@/lib/crm";
-import { SubscriptionFormModal, RemindModal, CancelSubscriptionModal } from "./SubscriptionDialogs";
+import { RemindModal, CancelSubscriptionModal } from "./SubscriptionDialogs";
 
 function Tile({ label, value, sub, tone, onClick, active }) {
   return (
@@ -35,12 +35,13 @@ export function RenewalCell({ s, onRenew, busy }) {
 export default function SubscriptionsPage() {
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [rows, setRows] = useState([]);
   const [summary, setSummary] = useState(null);
   const [filters, setFilters] = useState({ search: "", view: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [success, setSuccess] = useState(location.state?.success ?? "");
   const [dialog, setDialog] = useState(null);
   const [renewing, setRenewing] = useState(null);
   const [running, setRunning] = useState(false);
@@ -106,6 +107,9 @@ export default function SubscriptionsPage() {
           )}
           <button onClick={() => load()} className="inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800">
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
+          </button>
+          <button onClick={() => navigate("/subscriptions/new")} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-medium">
+            <Plus className="h-4 w-4" /> Add Subscription
           </button>
         </div>
       </div>
@@ -185,7 +189,7 @@ export default function SubscriptionsPage() {
                       {s.status === "ACTIVE" && (
                         <div className="inline-flex gap-1">
                           <button onClick={() => setDialog({ type: "remind", sub: s })} title="Send renewal reminder" className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-blue-600"><BellRing className="h-4 w-4" /></button>
-                          <button onClick={() => setDialog({ type: "edit", sub: s })} title="Edit" className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-blue-600"><Pencil className="h-4 w-4" /></button>
+                          <button onClick={() => navigate(`/subscriptions/${s.subscriptionId}/edit`)} title="Edit" className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-blue-600"><Pencil className="h-4 w-4" /></button>
                           {isAdmin && <button onClick={() => setDialog({ type: "cancel", sub: s })} title="Cancel subscription" className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-red-600"><Ban className="h-4 w-4" /></button>}
                         </div>
                       )}
@@ -199,7 +203,6 @@ export default function SubscriptionsPage() {
         </div>
       </div>
 
-      {dialog?.type === "edit" && <SubscriptionFormModal sub={dialog.sub} onClose={() => setDialog(null)} onSaved={() => closeAndReload("Subscription saved.")} />}
       {dialog?.type === "remind" && <RemindModal sub={dialog.sub} onClose={() => setDialog(null)} onSent={() => closeAndReload("Reminder sent.")} />}
       {dialog?.type === "cancel" && <CancelSubscriptionModal sub={dialog.sub} onClose={() => setDialog(null)} onDone={() => closeAndReload("Subscription cancelled.")} />}
     </div>
