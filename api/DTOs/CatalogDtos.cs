@@ -17,6 +17,11 @@ public class AccountRow
     public string? Address { get; set; }
     public string? City { get; set; }
     public string? Country { get; set; }
+    public string? State { get; set; }
+    public string? GroupName { get; set; }
+    public string? OtherIndustry { get; set; }
+    public string? InvoiceAddress { get; set; }
+    public string? DeliveryAddress { get; set; }
     public string? Notes { get; set; }
     public int Contacts { get; set; }
     public int OpenLeads { get; set; }
@@ -27,8 +32,7 @@ public class AccountRow
 public class SaveAccountDto
 {
     [Required, MaxLength(200)] public string AccountName { get; set; } = string.Empty;
-    // UAE TRN is 15 digits.
-    [RegularExpression(@"^\d{15}$", ErrorMessage = "TRN must be 15 digits.")] public string? Trn { get; set; }
+    [MaxLength(20)] public string? Trn { get; set; }
     [MaxLength(100)] public string? Industry { get; set; }
     [RegularExpression("1-10|11-50|51-200|201-500|500\\+")] public string? CompanySize { get; set; }
     [MaxLength(200)] public string? Website { get; set; }
@@ -37,6 +41,11 @@ public class SaveAccountDto
     [MaxLength(500)] public string? Address { get; set; }
     [MaxLength(100)] public string? City { get; set; }
     [MaxLength(100)] public string? Country { get; set; }
+    [MaxLength(100)] public string? State { get; set; }
+    [MaxLength(200)] public string? GroupName { get; set; }
+    [MaxLength(100)] public string? OtherIndustry { get; set; }
+    [MaxLength(500)] public string? InvoiceAddress { get; set; }
+    [MaxLength(500)] public string? DeliveryAddress { get; set; }
     [MaxLength(2000)] public string? Notes { get; set; }
 }
 

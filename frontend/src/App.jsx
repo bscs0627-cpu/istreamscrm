@@ -15,6 +15,7 @@ import EmailInboxPage from "@/pages/EmailInbox/EmailInboxPage";
 import EmailSettingsPage from "@/pages/EmailSettings/EmailSettingsPage";
 import SuperAdminPage from "@/pages/SuperAdmin/SuperAdminPage";
 import AccountsPage from "@/pages/Accounts/AccountsPage";
+import AccountFormPage from "@/pages/Accounts/AccountFormPage";
 import ProductsPage from "@/pages/Products/ProductsPage";
 import QuotationsPage from "@/pages/Quotations/QuotationsPage";
 import QuotationEditorPage from "@/pages/Quotations/QuotationEditorPage";
@@ -159,6 +160,8 @@ export default function App() {
       <Route path="/leads/:id" element={page(<LeadDetailPage />)} />
       <Route path="/follow-ups" element={page(<FollowUpsPage />)} />
       <Route path="/accounts" element={page(<AccountsPage />)} />
+      <Route path="/accounts/new" element={page(<AccountFormPage />)} />
+      <Route path="/accounts/:id/edit" element={page(<AccountFormPage />)} />
       <Route path="/products" element={page(<ProductsPage />)} />
       <Route path="/quotations" element={page(<QuotationsPage />)} />
       <Route path="/quotations/:id" element={page(<QuotationEditorPage />)} />

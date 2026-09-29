@@ -67,6 +67,11 @@ public class AccountsController : ControllerBase
         dto.Address = Blank(dto.Address);
         dto.City = Blank(dto.City);
         dto.Country = Blank(dto.Country);
+        dto.State = Blank(dto.State);
+        dto.GroupName = Blank(dto.GroupName);
+        dto.OtherIndustry = Blank(dto.OtherIndustry);
+        dto.InvoiceAddress = Blank(dto.InvoiceAddress);
+        dto.DeliveryAddress = Blank(dto.DeliveryAddress);
         dto.Notes = Blank(dto.Notes);
         return dto;
     }

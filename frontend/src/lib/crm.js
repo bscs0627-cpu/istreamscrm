@@ -96,6 +96,11 @@ export const UNITS = [
 
 export const PRODUCT_CATEGORIES = ["ERP", "HRMS", "CRM", "POS", "Accounting", "Inventory", "Mobile App", "Website", "Services", "Other"];
 
+export const COUNTRIES = [
+  "United Arab Emirates", "Saudi Arabia", "Qatar", "Kuwait", "Bahrain", "Oman", "India", "Pakistan", "Bangladesh", "Sri Lanka",
+  "Egypt", "Jordan", "Lebanon", "United Kingdom", "United States", "Canada", "Australia", "Singapore", "Malaysia", "Other",
+];
+
 export const COMPANY_SIZES = ["1-10", "11-50", "51-200", "201-500", "500+"];
 
 export const INDUSTRIES = [

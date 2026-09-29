@@ -49,7 +49,9 @@ public class AccountRepository : IAccountRepository
 
     private const string Columns = @"
         account_name = @AccountName, trn = @Trn, industry = @Industry, company_size = @CompanySize, website = @Website,
-        phone = @Phone, email = @Email, address = @Address, city = @City, country = @Country, notes = @Notes";
+        phone = @Phone, email = @Email, address = @Address, city = @City, country = @Country,
+        state = @State, group_name = @GroupName, other_industry = @OtherIndustry, invoice_address = @InvoiceAddress,
+        delivery_address = @DeliveryAddress, notes = @Notes";
 
     public async Task<AccountRow?> CreateAsync(int companyId, SaveAccountDto dto)
     {
