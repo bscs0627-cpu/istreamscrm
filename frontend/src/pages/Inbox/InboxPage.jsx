@@ -238,7 +238,7 @@ export default function InboxPage() {
                     {c.email && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" /> {c.email}</span>}
                   </div>
                 </div>
-                <button onClick={() => navigate("/tickets", { state: { newTicket: { customer: c, channel: "WHATSAPP" } } })}
+                <button onClick={() => navigate("/tickets/new", { state: { customer: c, channel: "WHATSAPP" } })}
                   className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-slate-700 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800">
                   <LifeBuoy className="h-3.5 w-3.5" /> New Ticket
                 </button>

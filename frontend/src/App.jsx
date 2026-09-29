@@ -30,6 +30,7 @@ import ReceivablesPage from "@/pages/Receivables/ReceivablesPage";
 import SubscriptionsPage from "@/pages/Subscriptions/SubscriptionsPage";
 import TicketsPage from "@/pages/Tickets/TicketsPage";
 import TicketDetailPage from "@/pages/Tickets/TicketDetailPage";
+import TicketFormPage from "@/pages/Tickets/TicketFormPage";
 import LeadsPage from "@/pages/Leads/LeadsPage";
 import LeadDetailPage from "@/pages/Leads/LeadDetailPage";
 import LeadFormPage from "@/pages/Leads/LeadFormPage";
@@ -251,7 +252,9 @@ export default function App() {
       <Route path="/receivables" element={page(<ReceivablesPage />)} />
       <Route path="/subscriptions" element={page(<SubscriptionsPage />)} />
       <Route path="/tickets" element={page(<TicketsPage />)} />
+      <Route path="/tickets/new" element={page(<TicketFormPage />)} />
       <Route path="/tickets/:id" element={page(<TicketDetailPage />)} />
+      <Route path="/tickets/:id/edit" element={page(<TicketFormPage />)} />
       <Route path="/company-profile" element={page(<CompanyProfilePage />, "admin")} />
       <Route path="/reports" element={page(<ReportsPage />)} />
       <Route path="/staff" element={page(<StaffPage />, "admin")} />

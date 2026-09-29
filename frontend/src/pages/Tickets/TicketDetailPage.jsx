@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   LifeBuoy, ArrowLeft, Pencil, Trash2, Loader2, Send, StickyNote, UserRound, Mail, MessagesSquare, ShieldCheck, ShieldAlert,
   FileText, Calculator, ArrowRightLeft,
 } from "lucide-react";
 import { TicketService } from "@/ServiceLayer/TicketService/TicketService";
-import { ProductService } from "@/ServiceLayer/CatalogService/CatalogService";
 import { StaffService } from "@/ServiceLayer/AuthService/AuthService";
 import { useAuth } from "@/context/AuthContext";
 import { Alerts, DeleteModal, inputCls, labelCls } from "@/components/common/ui";
@@ -70,11 +69,10 @@ export default function TicketDetailPage() {
   const { isAdmin, user } = useAuth();
   const [t, setT] = useState(null);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const location = useLocation();
+  const [success, setSuccess] = useState(location.state?.success ?? "");
   const [busy, setBusy] = useState(false);
   const [staff, setStaff] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [editing, setEditing] = useState(null);
   const [composer, setComposer] = useState({ kind: "REPLY", channel: "EMAIL", body: "" });
   const [statusForm, setStatusForm] = useState({ status: "", note: "" });
   const [estimate, setEstimate] = useState({ hours: "", rate: "" });
@@ -93,7 +91,6 @@ export default function TicketDetailPage() {
       if (row.ticketType === "CHANGE" && row.hourlyRate == null)
         TicketService.rate().then((r) => r.rate != null && setEstimate((e) => ({ ...e, rate: e.rate || String(r.rate) }))).catch(() => {});
     }).catch((err) => setError(err?.response?.status === 404 ? "Ticket not found, or it is assigned to someone else." : "Failed to load the ticket."));
-    ProductService.getAll({ activeOnly: true }).then(setProducts).catch(() => {});
     if (isAdmin) StaffService.getAll().then((r) => setStaff(r.filter((s) => s.isActive === "T"))).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
@@ -121,19 +118,6 @@ export default function TicketDetailPage() {
   const due = dueText(t);
   const estimateAmount = Number(estimate.hours) > 0 && Number(estimate.rate) >= 0 ? Math.round(Number(estimate.hours) * Number(estimate.rate) * 100) / 100 : null;
 
-  const startEdit = () => setEditing({
-    subject: t.subject, description: t.description ?? "", category: t.category, priority: t.priority, channel: t.channel,
-    productId: t.productId ? String(t.productId) : "",
-  });
-  const saveEdit = async (e) => {
-    e.preventDefault();
-    const done = await run(() => TicketService.update(t.ticketId, {
-      ...editing, ticketType: t.ticketType, customerId: t.customerId, productId: editing.productId ? Number(editing.productId) : null,
-      description: editing.description || null,
-    }), "Ticket saved.");
-    if (done) setEditing(null);
-  };
-
   const send = async (e) => {
     e.preventDefault();
     const done = await run(() => TicketService.comment(t.ticketId, {
@@ -141,8 +125,6 @@ export default function TicketDetailPage() {
     }), composer.kind === "REPLY" ? "Reply sent." : null);
     if (done) setComposer((c) => ({ ...c, body: "" }));
   };
-
-  const categories = TICKET_CATEGORIES.filter((c) => !c.type || c.type === t.ticketType);
 
   return (
     <div className="p-6 space-y-4">
@@ -164,7 +146,7 @@ export default function TicketDetailPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          {!editing && <button onClick={startEdit} className={btnOutline}><Pencil className="h-4 w-4" /> Edit</button>}
+          <button onClick={() => navigate(`/tickets/${t.ticketId}/edit`)} className={btnOutline}><Pencil className="h-4 w-4" /> Edit</button>
           {isAdmin && <button onClick={() => setConfirmDelete(true)} className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 text-sm font-medium"><Trash2 className="h-4 w-4" /> Delete</button>}
         </div>
       </div>
@@ -173,27 +155,10 @@ export default function TicketDetailPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4 min-w-0">
-          {editing ? (
-            <form onSubmit={saveEdit} className={`${card} p-4 space-y-3`}>
-              <div><label className={labelCls}>Subject *</label><input value={editing.subject} onChange={(e) => setEditing((f) => ({ ...f, subject: e.target.value }))} required maxLength={200} className={inputCls} /></div>
-              <div><label className={labelCls}>Details</label><textarea value={editing.description} onChange={(e) => setEditing((f) => ({ ...f, description: e.target.value }))} rows={5} maxLength={8000} className={inputCls} /></div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div><label className={labelCls}>Category</label><select value={editing.category} onChange={(e) => setEditing((f) => ({ ...f, category: e.target.value }))} className={inputCls}>{categories.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select></div>
-                <div><label className={labelCls}>Priority</label><select value={editing.priority} onChange={(e) => setEditing((f) => ({ ...f, priority: e.target.value }))} className={inputCls}>{TICKET_PRIORITIES.map((p) => <option key={p.value} value={p.value}>{p.label} (resolve in {p.sla})</option>)}</select></div>
-                <div><label className={labelCls}>Received by</label><select value={editing.channel} onChange={(e) => setEditing((f) => ({ ...f, channel: e.target.value }))} className={inputCls}>{TICKET_CHANNELS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select></div>
-                <div><label className={labelCls}>Product</label><select value={editing.productId} onChange={(e) => setEditing((f) => ({ ...f, productId: e.target.value }))} className={inputCls}><option value="">—</option>{products.map((p) => <option key={p.productId} value={p.productId}>{p.productCode} · {p.productName}</option>)}</select></div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setEditing(null)} className={btnOutline}>Cancel</button>
-                <button type="submit" disabled={busy} className={btnPrimary}>Save</button>
-              </div>
-            </form>
-          ) : (
-            <div className={`${card} p-4`}>
+          <div className={`${card} p-4`}>
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Details</h3>
               <p className="whitespace-pre-wrap break-words text-sm text-gray-700 dark:text-gray-300">{t.description || <span className="text-gray-400">No details written.</span>}</p>
             </div>
-          )}
 
           <div className={`${card} p-4 space-y-3`}>
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Conversation</h3>

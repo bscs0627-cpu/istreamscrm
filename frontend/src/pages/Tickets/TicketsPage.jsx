@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { LifeBuoy, RefreshCw, Search, Plus, MessageSquare } from "lucide-react";
 import { TicketService } from "@/ServiceLayer/TicketService/TicketService";
 import { Alerts, inputCls } from "@/components/common/ui";
 import { dateTime, displayName, shortTime } from "@/lib/time";
 import { TICKET_PRIORITIES, TICKET_TYPES, TICKET_DONE, ticketStatusOf } from "@/lib/crm";
-import NewTicketModal from "./NewTicketModal";
 
 const VIEWS = [
   { value: "OPEN", label: "All open" },
@@ -38,7 +37,6 @@ export function dueText(t) {
 }
 
 export default function TicketsPage() {
-  const location = useLocation();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [rows, setRows] = useState([]);
@@ -46,13 +44,6 @@ export default function TicketsPage() {
   const [filters, setFilters] = useState({ search: "", view: params.get("view") ?? "OPEN", type: params.get("type") ?? "", priority: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [newTicket, setNewTicket] = useState(location.state?.newTicket ?? null);
-
-  useEffect(() => {
-    if (location.state?.newTicket) navigate(location.pathname, { replace: true, state: null });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const load = async (f = filters) => {
     setLoading(true);
     try {
@@ -91,7 +82,7 @@ export default function TicketsPage() {
           <button onClick={() => load()} className="inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800">
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
           </button>
-          <button onClick={() => setNewTicket({})} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-medium">
+          <button onClick={() => navigate("/tickets/new")} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-medium">
             <Plus className="h-4 w-4" /> New Ticket
           </button>
         </div>
@@ -179,7 +170,6 @@ export default function TicketsPage() {
         </div>
       </div>
 
-      {newTicket && <NewTicketModal {...newTicket} onClose={() => setNewTicket(null)} />}
     </div>
   );
 }
