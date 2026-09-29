@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BarChart3, RefreshCw } from "lucide-react";
+import { BarChart3, RefreshCw, SlidersHorizontal } from "lucide-react";
 import client, { apiError } from "@/lib/apiClient";
 import { StaffService } from "@/ServiceLayer/AuthService/AuthService";
 import { useAuth } from "@/context/AuthContext";
@@ -152,25 +152,25 @@ function HBars({ title, rows, empty, colorClass = bar }) {
 
 function PeriodPicker({ preset, choosePreset, range, setCustom, isAdmin, agentId, setAgentId, staff }) {
   return (
-    <div className="flex flex-wrap items-end gap-3">
+    <div className="space-y-4">
       <div>
         <label className={labelCls}>Period</label>
-        <select value={preset} onChange={(e) => choosePreset(e.target.value)} className={`${inputCls.replace("w-full ", "")} w-40`}>
+        <select value={preset} onChange={(e) => choosePreset(e.target.value)} className={inputCls}>
           {Object.entries(PRESETS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
       </div>
       {preset === "custom" ? (
-        <>
-          <div><label className={labelCls}>From</label><input type="date" value={range[0]} onChange={setCustom(0)} className={`${inputCls.replace("w-full ", "")} w-40`} /></div>
-          <div><label className={labelCls}>To</label><input type="date" value={range[1]} onChange={setCustom(1)} className={`${inputCls.replace("w-full ", "")} w-40`} /></div>
-        </>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className={labelCls}>From</label><input type="date" value={range[0]} onChange={setCustom(0)} className={inputCls} /></div>
+          <div><label className={labelCls}>To</label><input type="date" value={range[1]} onChange={setCustom(1)} className={inputCls} /></div>
+        </div>
       ) : (
-        <span className="pb-2 text-sm text-gray-500 dark:text-gray-400">{formatDate(range[0])} – {formatDate(range[1])}</span>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{formatDate(range[0])} – {formatDate(range[1])}</p>
       )}
       {isAdmin && (
         <div>
           <label className={labelCls}>Agent</label>
-          <select value={agentId} onChange={(e) => setAgentId(e.target.value)} className={`${inputCls.replace("w-full ", "")} w-44`}>
+          <select value={agentId} onChange={(e) => setAgentId(e.target.value)} className={inputCls}>
             <option value="">All agents</option>
             {staff.map((u) => <option key={u.userId} value={u.userId}>{u.fullName}{u.isActive === "T" ? "" : " (inactive)"}</option>)}
           </select>
@@ -408,20 +408,31 @@ export default function ReportsPage() {
         </button>
       </div>
 
-      <div className="flex gap-2 border-b border-gray-200 dark:border-slate-800">
+      <div className="flex gap-1 rounded-xl bg-gray-100 dark:bg-slate-800 p-1">
         {TABS.map((t) => (
           <button key={t.value} onClick={() => setTab(t.value)}
-            className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px ${tab === t.value ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"}`}>
+            className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold ${tab === t.value
+              ? "bg-white dark:bg-slate-900 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-gray-400"}`}>
             {t.label}
           </button>
         ))}
       </div>
 
-      <PeriodPicker preset={preset} choosePreset={choosePreset} range={range} setCustom={setCustom} isAdmin={isAdmin} agentId={agentId} setAgentId={setAgentId} staff={staff} />
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_20rem] gap-4 items-start">
+        <div className="space-y-4 min-w-0 xl:order-1 order-2">
+          {tab === "leads" && <LeadsReport key={`leads-${refreshKey}`} range={range} agentId={agentId} isAdmin={isAdmin} />}
+          {tab === "revenue" && <RevenueReport key={`revenue-${refreshKey}`} range={range} agentId={agentId} />}
+          {tab === "tickets" && <TicketsReport key={`tickets-${refreshKey}`} range={range} agentId={agentId} isAdmin={isAdmin} />}
+        </div>
 
-      {tab === "leads" && <LeadsReport key={`leads-${refreshKey}`} range={range} agentId={agentId} isAdmin={isAdmin} />}
-      {tab === "revenue" && <RevenueReport key={`revenue-${refreshKey}`} range={range} agentId={agentId} />}
-      {tab === "tickets" && <TicketsReport key={`tickets-${refreshKey}`} range={range} agentId={agentId} isAdmin={isAdmin} />}
+        <div className={`${card} p-5 xl:order-2 order-1 xl:sticky xl:top-4`}>
+          <div className="flex items-center gap-2 mb-4">
+            <SlidersHorizontal className="h-5 w-5 text-gray-400" />
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Filters</h2>
+          </div>
+          <PeriodPicker preset={preset} choosePreset={choosePreset} range={range} setCustom={setCustom} isAdmin={isAdmin} agentId={agentId} setAgentId={setAgentId} staff={staff} />
+        </div>
+      </div>
     </div>
   );
 }
