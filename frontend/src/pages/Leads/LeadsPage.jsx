@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Target, Plus, RefreshCw, Search, Trash2, CalendarClock, MessagesSquare, Mail, FileSpreadsheet, X } from "lucide-react";
 import { LeadService } from "@/ServiceLayer/LeadService/LeadService";
-import { CustomerService } from "@/ServiceLayer/WhatsAppService/WhatsAppService";
 import { StaffService } from "@/ServiceLayer/AuthService/AuthService";
 import { ProductService } from "@/ServiceLayer/CatalogService/CatalogService";
 import { useAuth } from "@/context/AuthContext";
@@ -11,7 +10,6 @@ import { apiError } from "@/lib/apiClient";
 import { formatDate } from "@/lib/utils";
 import { toDate, dateTime, displayName } from "@/lib/time";
 import { LEAD_STATUSES, LEAD_SOURCES, PRIORITIES, labelOf, requirementSummary } from "@/lib/crm";
-import LeadForm from "./LeadForm";
 
 export const statusOf = (s) => LEAD_STATUSES.find((x) => x.value === s) ?? LEAD_STATUSES[0];
 export const priorityOf = (p) => PRIORITIES.find((x) => x.value === p) ?? PRIORITIES[1];
@@ -28,7 +26,7 @@ const VIEWS = [
 export default function LeadsPage() {
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
   const [rows, setRows] = useState([]);
   const [counts, setCounts] = useState([]);
   const [staff, setStaff] = useState([]);
@@ -41,8 +39,6 @@ export default function LeadsPage() {
     view: params.get("status") ? "" : params.get("view") ?? "open",
   }));
   const [loading, setLoading] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  const [presetCustomer, setPresetCustomer] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [selected, setSelected] = useState([]);
   const [bulkTarget, setBulkTarget] = useState("");
@@ -63,17 +59,6 @@ export default function LeadsPage() {
     load();
     ProductService.getAll({}).then(setProducts).catch(() => {});
     if (isAdmin) StaffService.getAll().then((r) => setStaff(r.filter((s) => s.isActive === "T"))).catch(() => {});
-    // Customers page "Create lead" opens the form with that customer chosen.
-    const customerId = params.get("customer");
-    if (params.get("new")) {
-      if (customerId) {
-        CustomerService.getAll({}).then((list) => {
-          setPresetCustomer(list.find((c) => String(c.customerId) === customerId) ?? null);
-          setShowForm(true);
-        }).catch(() => setShowForm(true));
-      } else setShowForm(true);
-      setParams({}, { replace: true });
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -137,7 +122,7 @@ export default function LeadsPage() {
               <FileSpreadsheet className="h-4 w-4" /> Import
             </Link>
           )}
-          <button onClick={() => { setPresetCustomer(null); setShowForm(true); }} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-medium">
+          <button onClick={() => navigate("/leads/new")} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-medium">
             <Plus className="h-4 w-4" /> Add Lead
           </button>
         </div>
@@ -197,12 +182,6 @@ export default function LeadsPage() {
       )}
 
       <Alerts success={success} error={error} onClearSuccess={() => setSuccess("")} onClearError={() => setError("")} />
-
-      {showForm && (
-        <LeadForm customer={presetCustomer} staff={staff} isAdmin={isAdmin} onError={setError}
-          onCancel={() => setShowForm(false)}
-          onSaved={(l) => { setShowForm(false); setError(""); navigate(`/leads/${l.leadId}`); }} />
-      )}
 
       {isAdmin && selected.length > 0 && (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-900/20 px-4 py-2.5">

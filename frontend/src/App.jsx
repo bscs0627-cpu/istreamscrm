@@ -31,6 +31,7 @@ import TicketsPage from "@/pages/Tickets/TicketsPage";
 import TicketDetailPage from "@/pages/Tickets/TicketDetailPage";
 import LeadsPage from "@/pages/Leads/LeadsPage";
 import LeadDetailPage from "@/pages/Leads/LeadDetailPage";
+import LeadFormPage from "@/pages/Leads/LeadFormPage";
 import ImportLeadsPage from "@/pages/Leads/ImportLeadsPage";
 import FollowUpsPage from "@/pages/FollowUps/FollowUpsPage";
 import ReportsPage from "@/pages/Reports/ReportsPage";
@@ -231,7 +232,9 @@ export default function App() {
       <Route path="/customers" element={page(<CustomersPage />)} />
       <Route path="/leads" element={page(<LeadsPage />)} />
       <Route path="/leads/import" element={page(<ImportLeadsPage />, "admin")} />
+      <Route path="/leads/new" element={page(<LeadFormPage />)} />
       <Route path="/leads/:id" element={page(<LeadDetailPage />)} />
+      <Route path="/leads/:id/edit" element={page(<LeadFormPage />)} />
       <Route path="/follow-ups" element={page(<FollowUpsPage />)} />
       <Route path="/accounts" element={page(<AccountsPage />)} />
       <Route path="/accounts/new" element={page(<AccountFormPage />)} />

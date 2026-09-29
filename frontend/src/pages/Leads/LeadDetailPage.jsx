@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Target, Pencil, Trash2, MessagesSquare, Mail, Phone, CalendarClock, CheckCircle2, Plus, X, StickyNote, Users,
   Presentation, ArrowRightLeft, UserCheck, Sparkles, Bot, FileText, Receipt,
@@ -15,7 +15,6 @@ import { formatDate } from "@/lib/utils";
 import {
   LEAD_STATUSES, LEAD_SOURCES, LOST_REASONS, FOLLOW_UP_TYPES, CALL_OUTCOMES, DEPLOYMENTS, labelOf, formatAed, requirementSummary,
 } from "@/lib/crm";
-import LeadForm from "./LeadForm";
 import LeadQuotations from "./LeadQuotations";
 import LeadSubscriptions from "./LeadSubscriptions";
 import LeadTickets from "./LeadTickets";
@@ -95,14 +94,14 @@ export default function LeadDetailPage() {
   const [timeline, setTimeline] = useState([]);
   const [followUps, setFollowUps] = useState([]);
   const [staff, setStaff] = useState([]);
-  const [editing, setEditing] = useState(false);
   const [statusForm, setStatusForm] = useState(null);
   const [activity, setActivity] = useState({ activityType: "NOTE", body: "", outcome: "ANSWERED" });
   const [followForm, setFollowForm] = useState(null);
   const [completing, setCompleting] = useState(null);
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [success, setSuccess] = useState("");
+  const location = useLocation();
+  const [success, setSuccess] = useState(location.state?.success ?? "");
   const [error, setError] = useState("");
 
   const load = async () => {
@@ -209,7 +208,7 @@ export default function LeadDetailPage() {
               <Mail className="h-4 w-4 text-blue-600" /> Email
             </Link>
           )}
-          <button onClick={() => setEditing(true)} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800">
+          <button onClick={() => navigate(`/leads/${lead.leadId}/edit`)} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800">
             <Pencil className="h-4 w-4" /> Edit
           </button>
           {isAdmin && (
@@ -221,11 +220,6 @@ export default function LeadDetailPage() {
       </div>
 
       <Alerts success={success} error={error} onClearSuccess={() => setSuccess("")} onClearError={() => setError("")} />
-
-      {editing && (
-        <LeadForm lead={lead} staff={staff} isAdmin={isAdmin} onError={setError} onCancel={() => setEditing(false)}
-          onSaved={() => { setEditing(false); setSuccess("Lead updated."); load(); }} />
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 items-start">
         <div className="space-y-4">
