@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import { Routes, Route, Navigate, NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, MessagesSquare, Contact, Users, NotebookPen, MessageCircle, ShieldAlert, LogOut, Mail, AtSign,
   Building2, Package, Target, CalendarClock, BarChart3, FileText, Landmark, Receipt, Wallet, Repeat, LifeBuoy,
+  Menu, X, Sun, Moon, Maximize, Minimize,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import LoginPage from "@/pages/Auth/LoginPage";
@@ -44,7 +46,7 @@ const NAV = [
   { to: "/receivables", label: "Receivables", icon: Wallet, access: "all" },
   { to: "/subscriptions", label: "Subscriptions", icon: Repeat, access: "all" },
   { to: "/tickets", label: "Tickets", icon: LifeBuoy, access: "all" },
-  { to: "/accounts", label: "Companies", icon: Building2, access: "all" },
+  { to: "/accounts", label: "Customers", icon: Building2, access: "all" },
   { to: "/customers", label: "Contacts", icon: Contact, access: "all" },
   { to: "/products", label: "Products", icon: Package, access: "all" },
   { to: "/reports", label: "Reports", icon: BarChart3, access: "all" },
@@ -78,7 +80,7 @@ function RequireAuth({ access, children }) {
   return children;
 }
 
-function Sidebar() {
+function Sidebar({ open, onClose }) {
   const auth = useAuth();
   const { user, logout, unread, emailUnread, followUpsDue } = auth;
   const badges = { "/inbox": unread, "/email-inbox": emailUnread, "/follow-ups": followUpsDue };
@@ -90,16 +92,19 @@ function Sidebar() {
     }`;
 
   return (
-    <aside className="w-60 shrink-0 border-r border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 flex flex-col">
+    <>
+    {open && <div className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={onClose} />}
+    <aside className={`fixed inset-y-0 left-0 z-40 w-60 shrink-0 transform transition-transform md:static md:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"} border-r border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 flex flex-col`}>
       <div className="flex items-center gap-2 mb-1 px-2">
         <MessageCircle className="h-6 w-6 shrink-0 text-green-600" />
-        <span className="text-base font-bold leading-tight text-gray-900 dark:text-white">iStreams CRM</span>
+        <span className="flex-1 text-base font-bold leading-tight text-gray-900 dark:text-white">iStreams CRM</span>
+        <button onClick={onClose} className="md:hidden text-gray-500" aria-label="Close menu"><X className="h-5 w-5" /></button>
       </div>
       <div className="px-2 mb-6 text-xs text-gray-500 dark:text-gray-400 truncate" title={user?.companyName}>{user?.companyName}</div>
 
       <nav className="space-y-1 flex-1 overflow-y-auto">
         {NAV.filter((n) => allowed(n.access, auth)).map((n) => (
-          <NavLink key={n.to} to={n.to} className={linkClass}>
+          <NavLink key={n.to} to={n.to} className={linkClass} onClick={onClose}>
             <n.icon className="h-4 w-4" />
             <span className="flex-1">{n.label}</span>
             {badges[n.to] > 0 && (
@@ -124,14 +129,55 @@ function Sidebar() {
         </button>
       </div>
     </aside>
+    </>
   );
 }
 
+function useTheme() {
+  const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
+  const toggle = () => {
+    const next = !dark;
+    document.documentElement.classList.toggle("dark", next);
+    try { localStorage.setItem("theme", next ? "dark" : "light"); } catch { /* storage unavailable */ }
+    setDark(next);
+  };
+  return [dark, toggle];
+}
+
+function useFullscreen() {
+  const [full, setFull] = useState(!!document.fullscreenElement);
+  useEffect(() => {
+    const on = () => setFull(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", on);
+    return () => document.removeEventListener("fullscreenchange", on);
+  }, []);
+  const toggle = () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()).catch(() => {});
+  return [full, toggle];
+}
+
 function Shell({ children }) {
+  const [menu, setMenu] = useState(false);
+  const [dark, toggleTheme] = useTheme();
+  const [full, toggleFull] = useFullscreen();
+  const btn = "rounded-lg p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800";
   return (
     <div className="flex h-full bg-gray-50 dark:bg-slate-950">
-      <Sidebar />
-      <main className="flex-1 overflow-auto">{children}</main>
+      <Sidebar open={menu} onClose={() => setMenu(false)} />
+      <div className="flex-1 min-w-0 flex flex-col">
+        <header className="shrink-0 flex items-center gap-2 border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2">
+          <button onClick={() => setMenu(true)} className={`${btn} md:hidden`} aria-label="Open menu"><Menu className="h-5 w-5" /></button>
+          <span className="md:hidden text-sm font-bold text-gray-900 dark:text-white">iStreams CRM</span>
+          <div className="ml-auto flex items-center gap-1">
+            <button onClick={toggleFull} className={`${btn} hidden sm:block`} title={full ? "Exit full screen" : "Full screen"} aria-label="Toggle full screen">
+              {full ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
+            </button>
+            <button onClick={toggleTheme} className={btn} title={dark ? "Light theme" : "Dark theme"} aria-label="Toggle theme">
+              {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </button>
+          </div>
+        </header>
+        <main className="flex-1 overflow-auto">{children}</main>
+      </div>
     </div>
   );
 }

@@ -32,7 +32,7 @@ export default function AccountFormPage() {
   const [contactForm, setContactForm] = useState(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!!editId);
-  const [success, setSuccess] = useState("");
+  const [success, setSuccess] = useState(location.state?.success ?? "");
   const [error, setError] = useState(location.state?.error ?? "");
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export default function AccountFormPage() {
         setForm(Object.fromEntries(Object.keys(emptyForm).map((k) => [k, account[k] ?? ""])));
         setContacts(list.map((c) => ({ key: `c${c.customerId}`, customerId: c.customerId, ...pick(c) })));
       })
-      .catch(() => setError("Failed to load company."))
+      .catch(() => setError("Failed to load customer."))
       .finally(() => setLoading(false));
   }, [editId]);
 
@@ -61,58 +61,64 @@ export default function AccountFormPage() {
   );
   const Err = ({ k }) => (missing(k) ? <p className="mt-1 text-xs text-red-500">{REQUIRED[k]} is required</p> : null);
 
-  const saveContact = () => {
+  const validateForm = () => {
+    setTouched(true);
+    const first = Object.keys(REQUIRED).find((k) => !form[k].trim());
+    if (first) { setError(`${REQUIRED[first]} is required.`); return false; }
+    return true;
+  };
+
+  const saveAccount = async () => {
+    const payload = Object.fromEntries(Object.entries(form).map(([k, v]) => [k, v.trim() || null]));
+    try {
+      if (editId) { await AccountService.update(editId, payload); return editId; }
+      return (await AccountService.create(payload)).accountId;
+    } catch (err) {
+      setError(apiError(err, "Failed to save customer."));
+      return null;
+    }
+  };
+
+  const saveContact = async () => {
+    if (saving) return;
     const mobileNo = contactForm.mobileNo.replace(/[^\d]/g, "");
     const email = contactForm.email.trim();
     if (!mobileNo && !email) { setError("Enter a mobile number or an email ID for the contact."); return; }
     if (mobileNo && (mobileNo.length < 8 || mobileNo.length > 15)) { setError("Contact mobile must be 8-15 digits with country code."); return; }
-    setError("");
-    const next = { ...contactForm, mobileNo, email, dirty: true };
-    setContacts((cs) => contactForm.key
-      ? cs.map((c) => (c.key === contactForm.key ? next : c))
-      : [...cs, { ...next, key: `n${Date.now()}` }]);
-    setContactForm(null);
+    if (!editId && !validateForm()) return;
+    setSaving(true); setError("");
+    const accountId = editId ?? (await saveAccount());
+    if (!accountId) { setSaving(false); return; }
+    const body = {
+      mobileNo: mobileNo || null, customerName: contactForm.customerName.trim() || null,
+      email: email || null, jobTitle: contactForm.jobTitle.trim() || null, accountId,
+    };
+    try {
+      const row = contactForm.customerId
+        ? await CustomerService.update(contactForm.customerId, body)
+        : await CustomerService.create(body);
+      if (!editId) {
+        navigate(`/accounts/${accountId}/edit`, { replace: true, state: { success: "Customer and contact saved." } });
+        return;
+      }
+      const item = { key: `c${row.customerId}`, customerId: row.customerId, ...pick(row) };
+      setContacts((cs) => (contactForm.customerId ? cs.map((c) => (c.customerId === row.customerId ? item : c)) : [...cs, item]));
+      setContactForm(null);
+      setSuccess("Contact saved.");
+    } catch (err) {
+      const msg = apiError(err, "Failed to save contact.");
+      if (!editId) navigate(`/accounts/${accountId}/edit`, { replace: true, state: { error: `Customer saved, but the contact failed - ${msg}` } });
+      else setError(msg);
+    } finally { setSaving(false); }
   };
 
   const submit = async (e) => {
     e.preventDefault();
-    if (saving) return;
-    setTouched(true);
-    const first = Object.keys(REQUIRED).find((k) => !form[k].trim());
-    if (first) { setError(`${REQUIRED[first]} is required.`); return; }
+    if (saving || !validateForm()) return;
     setSaving(true); setError("");
-    const payload = Object.fromEntries(Object.entries(form).map(([k, v]) => [k, v.trim() || null]));
-    let accountId = editId;
-    try {
-      if (editId) await AccountService.update(editId, payload);
-      else accountId = (await AccountService.create(payload)).accountId;
-    } catch (err) {
-      setError(apiError(err, "Failed to save company."));
-      setSaving(false);
-      return;
-    }
-
-    const failed = [];
-    for (const c of contacts.filter((x) => x.dirty)) {
-      const body = {
-        mobileNo: c.mobileNo || null, customerName: c.customerName.trim() || null,
-        email: c.email.trim() || null, jobTitle: c.jobTitle.trim() || null, accountId,
-      };
-      try {
-        if (c.customerId) await CustomerService.update(c.customerId, body);
-        else await CustomerService.create(body);
-      } catch (err) {
-        failed.push(`${c.customerName || c.email || c.mobileNo}: ${apiError(err, "could not be saved")}`);
-      }
-    }
-
-    if (failed.length) {
-      const msg = `Company saved, but some contacts failed - ${failed.join("; ")}`;
-      if (editId) { setError(msg); setSaving(false); return; }
-      navigate(`/accounts/${accountId}/edit`, { replace: true, state: { error: msg } });
-      return;
-    }
-    navigate("/accounts");
+    const accountId = await saveAccount();
+    setSaving(false);
+    if (accountId) navigate("/accounts");
   };
 
   if (loading) return <div className="p-6 text-sm text-gray-500 dark:text-gray-400">Loading...</div>;
@@ -121,7 +127,7 @@ export default function AccountFormPage() {
 
   return (
     <div className="p-6 space-y-4">
-      <Breadcrumb items={[{ label: "Companies", to: "/accounts" }, { label: editId ? "Edit Company" : "New Company" }]} />
+      <Breadcrumb items={[{ label: "Customers", to: "/accounts" }, { label: editId ? "Edit Customer" : "New Customer" }]} />
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{editId ? "Edit Customer" : "Create Customer"}</h1>
       <Alerts success={success} error={error} onClearSuccess={() => setSuccess("")} onClearError={() => setError("")} />
 
@@ -245,7 +251,6 @@ export default function AccountFormPage() {
                 <div className="min-w-0 text-sm">
                   <div className="font-medium text-gray-900 dark:text-white truncate">
                     {c.customerName || c.email || c.mobileNo}
-                    {!c.customerId && <span className="ml-2 text-xs font-normal text-amber-600">unsaved</span>}
                   </div>
                   {c.jobTitle && <div className="text-xs text-gray-500 dark:text-gray-400">{c.jobTitle}</div>}
                   {c.mobileNo && <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400"><Phone className="h-3 w-3" />{c.mobileNo}</div>}
@@ -253,9 +258,6 @@ export default function AccountFormPage() {
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button type="button" onClick={() => setContactForm(c)} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-blue-600" title="Edit"><Pencil className="h-4 w-4" /></button>
-                  {!c.customerId && (
-                    <button type="button" onClick={() => setContacts((cs) => cs.filter((x) => x.key !== c.key))} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-red-600" title="Remove"><X className="h-4 w-4" /></button>
-                  )}
                 </div>
               </div>
             ))}
@@ -280,7 +282,7 @@ export default function AccountFormPage() {
                 </div>
                 <div className="flex justify-end gap-2">
                   <button type="button" onClick={() => setContactForm(null)} className="rounded-lg border border-gray-300 dark:border-slate-700 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800">Cancel</button>
-                  <button type="button" onClick={saveContact} className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 text-sm font-medium">{contactForm.key ? "Done" : "Add"}</button>
+                  <button type="button" onClick={saveContact} disabled={saving} className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 text-sm font-medium disabled:opacity-60">{saving ? "Saving..." : "Save"}</button>
                 </div>
               </div>
             )}
@@ -293,7 +295,7 @@ export default function AccountFormPage() {
               </button>
             </div>
           )}
-          <p className="mt-3 text-xs text-gray-400 text-center">Contacts are saved with the customer.</p>
+          
         </div>
       </div>
     </div>

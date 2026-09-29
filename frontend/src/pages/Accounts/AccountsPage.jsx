@@ -18,7 +18,7 @@ export default function AccountsPage() {
   const load = async () => {
     setLoading(true);
     try { setRows(await AccountService.getAll({ search: search || undefined })); }
-    catch { setError("Failed to load companies."); }
+    catch { setError("Failed to load customers."); }
     finally { setLoading(false); }
   };
 
@@ -28,8 +28,8 @@ export default function AccountsPage() {
   }, []);
 
   const confirmDelete = async () => {
-    try { await AccountService.remove(deleteTarget.accountId); setSuccess("Company deleted. Its contacts are kept."); }
-    catch { setError("Failed to delete company."); }
+    try { await AccountService.remove(deleteTarget.accountId); setSuccess("Customer deleted. Its contacts are kept."); }
+    catch { setError("Failed to delete customer."); }
     finally { setDeleteTarget(null); load(); }
   };
 
@@ -39,8 +39,8 @@ export default function AccountsPage() {
         <div className="flex items-center gap-3">
           <div className="rounded-xl bg-blue-600/10 p-2"><Building2 className="h-6 w-6 text-blue-600" /></div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Companies</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Customer and prospect businesses, with their TRN and contacts</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Customers</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Customer and prospect businesses, with their tax number and contacts</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -48,7 +48,7 @@ export default function AccountsPage() {
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
           </button>
           <button onClick={() => navigate("/accounts/new")} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-medium">
-            <Plus className="h-4 w-4" /> Add Company
+            <Plus className="h-4 w-4" /> Add Customer
           </button>
         </div>
       </div>
@@ -69,7 +69,7 @@ export default function AccountsPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
               <tr className="text-left text-gray-600 dark:text-gray-300">
-                <th className="px-4 py-3 font-medium">Company</th>
+                <th className="px-4 py-3 font-medium">Customer</th>
                 <th className="px-4 py-3 font-medium">TRN</th>
                 <th className="px-4 py-3 font-medium">Industry</th>
                 <th className="px-4 py-3 font-medium">Phone / Email</th>
@@ -81,7 +81,7 @@ export default function AccountsPage() {
             </thead>
             <tbody>
               {rows.length === 0 && !loading && (
-                <tr><td colSpan={8} className="px-4 py-10 text-center text-gray-400">No companies yet.</td></tr>
+                <tr><td colSpan={8} className="px-4 py-10 text-center text-gray-400">No customers yet.</td></tr>
               )}
               {rows.map((a) => (
                 <tr key={a.accountId} className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
