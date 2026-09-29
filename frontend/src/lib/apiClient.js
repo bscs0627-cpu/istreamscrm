@@ -8,6 +8,17 @@ const apiClient = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+// An identical write (same method, URL and body) sent while the first is still running is a double click:
+// both callers share the one request, so a record is never created or changed twice.
+const sendAdapter = axios.getAdapter(apiClient.defaults.adapter);
+const inFlight = new Map();
+apiClient.defaults.adapter = (config) => {
+  if ((config.method ?? "get").toLowerCase() === "get") return sendAdapter(config);
+  const key = [config.method, config.baseURL, config.url, JSON.stringify(config.params ?? null), config.data instanceof FormData ? Math.random() : config.data].join("|");
+  if (!inFlight.has(key)) inFlight.set(key, sendAdapter(config).finally(() => inFlight.delete(key)));
+  return inFlight.get(key);
+};
+
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem(TOKEN_KEY);
   if (token) config.headers.Authorization = `Bearer ${token}`;

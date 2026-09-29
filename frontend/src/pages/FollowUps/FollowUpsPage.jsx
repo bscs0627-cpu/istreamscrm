@@ -26,6 +26,7 @@ export default function FollowUpsPage() {
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(false);
   const [completing, setCompleting] = useState(null);
+  const [completeBusy, setCompleteBusy] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
 
@@ -53,10 +54,13 @@ export default function FollowUpsPage() {
 
   const complete = async (e) => {
     e.preventDefault();
+    if (completeBusy) return;
+    setCompleteBusy(true);
     try {
       await FollowUpService.complete(completing.id, completing.result.trim() || null);
       setSuccess("Follow-up done."); setCompleting(null); load(); refreshUnread();
     } catch (err) { setError(apiError(err, "Failed to update follow-up.")); }
+    finally { setCompleteBusy(false); }
   };
 
   return (
@@ -139,7 +143,7 @@ export default function FollowUpsPage() {
                         <form onSubmit={complete} className="mt-2 flex gap-2">
                           <input autoFocus value={completing.result} onChange={(e) => setCompleting((c) => ({ ...c, result: e.target.value }))}
                             maxLength={2000} placeholder="What happened? (optional)" className={inputCls} />
-                          <button type="submit" className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 text-sm font-medium">Save</button>
+                          <button type="submit" disabled={completeBusy} className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 text-sm font-medium disabled:opacity-60">Save</button>
                           <button type="button" onClick={() => setCompleting(null)} className="rounded-lg border border-gray-300 dark:border-slate-700 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-200">Cancel</button>
                         </form>
                       )}

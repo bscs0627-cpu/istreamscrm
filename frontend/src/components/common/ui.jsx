@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { X, AlertTriangle, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -53,7 +54,13 @@ export function Alerts({ success, error, onClearSuccess, onClearError }) {
 }
 
 export function DeleteModal({ open, name, onCancel, onConfirm }) {
+  const [busy, setBusy] = useState(false);
   if (!open) return null;
+  const confirm = async () => {
+    if (busy) return;
+    setBusy(true);
+    try { await onConfirm(); } finally { setBusy(false); }
+  };
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="w-full max-w-md rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-lg p-6">
@@ -72,8 +79,8 @@ export function DeleteModal({ open, name, onCancel, onConfirm }) {
           <button onClick={onCancel} className="rounded-lg border border-gray-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800">
             Cancel
           </button>
-          <button onClick={onConfirm} className="rounded-lg bg-red-600 hover:bg-red-700 text-white px-5 py-2 text-sm font-medium">
-            Delete
+          <button onClick={confirm} disabled={busy} className="rounded-lg bg-red-600 hover:bg-red-700 text-white px-5 py-2 text-sm font-medium disabled:opacity-60">
+            {busy ? "Deleting..." : "Delete"}
           </button>
         </div>
       </div>
