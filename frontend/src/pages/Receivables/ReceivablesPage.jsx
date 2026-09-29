@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Wallet, RefreshCw } from "lucide-react";
+import { Wallet, RefreshCw, Building2 } from "lucide-react";
 import { InvoiceService } from "@/ServiceLayer/QuoteService/QuoteService";
 import { Alerts } from "@/components/common/ui";
-import { formatAed } from "@/lib/crm";
+import { formatDate } from "@/lib/utils";
+import { formatAed, invoiceStateOf } from "@/lib/crm";
 
 const BUCKETS = [
   { key: "notDue", label: "Not yet due" },
@@ -19,6 +20,9 @@ export default function ReceivablesPage() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [selected, setSelected] = useState(null);
+  const [invoices, setInvoices] = useState([]);
+  const [invLoading, setInvLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -28,6 +32,13 @@ export default function ReceivablesPage() {
   };
 
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    if (!selected) { setInvoices([]); return; }
+    setInvLoading(true);
+    const params = selected.accountId ? { payment: "OUTSTANDING", accountId: selected.accountId } : { payment: "OUTSTANDING", search: selected.customer };
+    InvoiceService.getAll(params).then(setInvoices).catch(() => setError("Failed to load the customer's invoices.")).finally(() => setInvLoading(false));
+  }, [selected]);
 
   const sum = (k) => rows.reduce((a, r) => a + r[k], 0);
   const total = sum("total");
@@ -50,7 +61,9 @@ export default function ReceivablesPage() {
 
       <Alerts error={error} onClearError={() => setError("")} />
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-start">
+      <div className="xl:col-span-2 space-y-4 min-w-0">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         <Link to="/invoices?payment=OUTSTANDING" className="rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm hover:border-gray-300">
           <div className="text-xs font-medium text-gray-500 dark:text-gray-400">Total outstanding</div>
           <div className="mt-1 text-xl font-bold tabular-nums text-gray-900 dark:text-white">{formatAed(total)}</div>
@@ -85,9 +98,9 @@ export default function ReceivablesPage() {
                 <tr><td colSpan={8} className="px-4 py-10 text-center text-gray-400">Nothing outstanding. Every issued invoice is paid.</td></tr>
               )}
               {rows.map((r, i) => (
-                <tr key={`${r.accountId ?? "c"}-${i}`} className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+                <tr key={`${r.accountId ?? "c"}-${i}`} className={`border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors ${selected === r ? "bg-blue-50 dark:bg-blue-900/20" : ""}`}>
                   <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                    {r.accountId ? <Link to={`/invoices?payment=OUTSTANDING&account=${r.accountId}`} className="hover:text-blue-600">{r.customer}</Link> : r.customer}
+                    <button type="button" onClick={() => setSelected(r)} className="text-left hover:text-blue-600">{r.customer}</button>
                   </td>
                   <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-300">{r.invoices}</td>
                   {BUCKETS.map((b, j) => (
@@ -107,6 +120,46 @@ export default function ReceivablesPage() {
             </tbody>
           </table>
         </div>
+      </div>
+      </div>
+
+      <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm p-5 min-h-[16rem]">
+        <div className="flex items-center gap-2 mb-3">
+          <Building2 className="h-5 w-5 text-gray-400" />
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Customer</h2>
+        </div>
+        {!selected ? (
+          <p className="text-sm text-gray-400 py-10 text-center">Click a customer to see the invoices they owe.</p>
+        ) : (
+          <>
+            <div className="font-medium text-gray-900 dark:text-white">{selected.customer}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">{selected.invoices} outstanding · <b className="text-gray-900 dark:text-white">{formatAed(selected.total)}</b></div>
+            <ul className="mt-3 divide-y divide-gray-100 dark:divide-slate-800">
+              {invoices.length === 0 && <li className="py-6 text-center text-sm text-gray-400">{invLoading ? "Loading..." : "No outstanding invoices."}</li>}
+              {invoices.map((i) => {
+                const st = invoiceStateOf(i);
+                return (
+                  <li key={i.invoiceId} className="py-2">
+                    <Link to={`/invoices/${i.invoiceId}`} className="flex flex-wrap items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-800/50 rounded-md">
+                      <span className="font-mono text-sm font-medium text-blue-600">{i.invoiceNo}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${st.cls}`}>{st.label}</span>
+                      <span className="ml-auto text-sm font-medium tabular-nums text-gray-900 dark:text-white">{formatAed(i.balance)}</span>
+                      <span className="w-full text-xs text-gray-500 dark:text-gray-400">
+                        {i.stage ? `${i.stage} · ` : ""}due {formatDate(i.dueDate)}{i.daysOverdue > 0 ? ` · ${i.daysOverdue} days overdue` : ""}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="flex justify-center gap-2 pt-4">
+              <button type="button" onClick={() => setSelected(null)} className="rounded-lg border border-gray-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800">Clear</button>
+              <Link to={selected.accountId ? `/invoices?payment=OUTSTANDING&account=${selected.accountId}` : "/invoices?payment=OUTSTANDING"}
+                className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-medium">Open in Invoices</Link>
+            </div>
+          </>
+        )}
+      </div>
       </div>
     </div>
   );
