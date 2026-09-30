@@ -3,7 +3,7 @@ import { Routes, Route, Navigate, NavLink, useLocation } from "react-router-dom"
 import {
   LayoutDashboard, MessagesSquare, Contact, Users, NotebookPen, MessageCircle, ShieldAlert, LogOut, Mail, AtSign,
   Building2, Package, Target, CalendarClock, BarChart3, FileText, Landmark, Receipt, Wallet, Repeat, LifeBuoy,
-  PanelLeft, X, Sun, Moon, Maximize, Minimize,
+  PanelLeft, Database, X, Sun, Moon, Maximize, Minimize,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import LoginPage from "@/pages/Auth/LoginPage";
@@ -19,6 +19,7 @@ import EmailSettingsPage from "@/pages/EmailSettings/EmailSettingsPage";
 import SuperAdminPage from "@/pages/SuperAdmin/SuperAdminPage";
 import AccountsPage from "@/pages/Accounts/AccountsPage";
 import AccountFormPage from "@/pages/Accounts/AccountFormPage";
+import ErpCustomerFormPage from "@/pages/Accounts/ErpCustomerFormPage";
 import ProductsPage from "@/pages/Products/ProductsPage";
 import ProductFormPage from "@/pages/Products/ProductFormPage";
 import QuotationsPage from "@/pages/Quotations/QuotationsPage";
@@ -54,6 +55,7 @@ const NAV = [
   { to: "/tickets", label: "Tickets", icon: LifeBuoy, access: "all" },
   { to: "/accounts", label: "Customers", icon: Building2, access: "all" },
   { to: "/customers", label: "Contacts", icon: Contact, access: "all" },
+  { to: "/erp-customers/new", label: "ERP Customers", icon: Database, access: "all" },
   { to: "/products", label: "Products", icon: Package, access: "all" },
   { to: "/reports", label: "Reports", icon: BarChart3, access: "all" },
   { to: "/staff", label: "Staff", icon: Users, access: "admin" },
@@ -242,6 +244,8 @@ export default function App() {
       <Route path="/follow-ups" element={page(<FollowUpsPage />)} />
       <Route path="/accounts" element={page(<AccountsPage />)} />
       <Route path="/accounts/new" element={page(<AccountFormPage />)} />
+      <Route path="/erp-customers/new" element={page(<ErpCustomerFormPage />)} />
+      <Route path="/erp-customers/:clientId/edit" element={page(<ErpCustomerFormPage />)} />
       <Route path="/accounts/:id/edit" element={page(<AccountFormPage />)} />
       <Route path="/products" element={page(<ProductsPage />)} />
       <Route path="/products/new" element={page(<ProductFormPage />, "admin")} />
